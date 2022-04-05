@@ -1,6 +1,6 @@
 package com.evolutiongaming.bootcamp.basics
 
-object ClassesAndTraits {
+object ClassesAndTraits extends App {
   // You can follow your progress using the tests in `ClassesAndTraitsSpec`:
   //   sbt "testOnly com.evolutiongaming.bootcamp.basics.ClassesAndTraitsSpec"
 
@@ -49,7 +49,7 @@ object ClassesAndTraits {
   //
   // This makes code more reusable and testable.
 
-  sealed trait Shape extends Located with Bounded
+  sealed trait Shape extends Located with Bounded with Movable
 
   sealed trait Located {
     def x: Double
@@ -63,21 +63,35 @@ object ClassesAndTraits {
     def maxY: Double
   }
 
+  sealed trait Movable {
+    def move(dx: Double, dy: Double): Shape
+  }
+
   final case class Point(x: Double, y: Double) extends Shape {
     override def minX: Double = x
     override def maxX: Double = x
     override def minY: Double = y
     override def maxY: Double = y
+    override def move(dx: Double, dy: Double): Point = Point(x + dx, y + dy)
   }
 
   final case class Circle(centerX: Double, centerY: Double, radius: Double) extends Shape {
-    override def x: Double    = ???
-    override def y: Double    = ???
-    override def minX: Double = ???
-    override def maxX: Double = ???
-    override def minY: Double = ???
-    override def maxY: Double = ???
+    override def x: Double    = centerX
+    override def y: Double    = centerY
+    override def minX: Double = centerX - radius
+    override def maxX: Double = centerX + radius
+    override def minY: Double = centerY - radius
+    override def maxY: Double = centerY + radius
+    override def move(dx: Double, dy: Double): Circle = Circle(centerX + dx, centerY + dy, radius)
   }
+
+  val testPoint = Point(5, 6)
+  println(testPoint)
+  println(testPoint.move(2, 3))
+
+  val testCircle = Circle(5, 6, 10)
+  println(testCircle)
+  println(testCircle.move(-2, 3))
 
   // Case Classes
   //
@@ -115,9 +129,9 @@ object ClassesAndTraits {
     new Bounded {
       // if needed, fix the code to be correct
       override def minX: Double = objects.map(_.minX).min
-      override def maxX: Double = objects.map(_.minX).min
-      override def minY: Double = objects.map(_.minX).min
-      override def maxY: Double = objects.map(_.minX).min
+      override def maxX: Double = objects.map(_.maxX).max
+      override def minY: Double = objects.map(_.minY).min
+      override def maxY: Double = objects.map(_.maxY).max
     }
 
   // Singleton can extend classes and mix in traits
@@ -142,8 +156,14 @@ object ClassesAndTraits {
 
   // Question. Do you agree with how the stack is modelled here? What would you do differently?
   final case class Stack[A](elements: List[A] = Nil) {
-    def push(x: A): Stack[A] = ???
-    def peek: A              = ???
-    def pop: (A, Stack[A])   = ???
+    def push(x: A): Stack[A] = Stack(x :: elements)
+    def peek: A              = elements.head
+    def pop: (A, Stack[A])   = (elements.head, Stack(elements.tail))
   }
+
+  val stack = Stack(List(1, 2 ,3 ,4))
+  println(stack)
+  println(stack.peek)
+  println(stack.push(6))
+  println(stack.push(6).pop)
 }
