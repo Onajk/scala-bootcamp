@@ -235,7 +235,7 @@ object Basics {
   // Try defining it using both String concatenation and interpolation.
   //
   // Note. `???` can be used to indicate code that is yet to be implemented.
-  def helloMethod(name: String): String = s"Hello, ${name}!"
+  def helloMethod(name: String): String = s"Hello, $name!"
 
   // Exercise. Define a method "add" which takes two integers and returns their sum.
   def add(a: Int, b: Int): Int = a + b
@@ -355,6 +355,8 @@ object Basics {
   // Exercise. Invoke `formatNamedValue` with a `List[String]` as `A`. You can use `_.mkString(", ")` to
   // concatenate the list with comma as a delimiter. You can provide the `List[String]` type
   // explicitly after the method name or for the `format` function.
+
+  formatNamedValue[List[String]]("Exercise", _.mkString(", "))(List("firstString", "secondString"))
 
   // Tuples
   //
