@@ -32,7 +32,14 @@ object ControlStructures {
   // Exercise. Implement a "Fizz-Buzz" https://en.wikipedia.org/wiki/Fizz_buzz function using the if-else,
   // returning "fizzbuzz" for numbers which divide with 15, "fizz" for those which divide by 3 and "buzz" for
   // those which divide with 5, and returning the input number as a string for other numbers:
-  def fizzBuzz1(n: Int): String = ???
+  def fizzBuzz1(n: Int): String = {
+    if (n % 3 == 0) {
+      if ((n / 3) % 5 == 0) "fizzbuzz"
+      else "fizz"
+    } else if (n % 5 == 0) "buzz"
+    else n.toString
+  }
+
 
   // Pattern Matching
   //
