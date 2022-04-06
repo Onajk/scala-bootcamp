@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
 
-object ControlStructures {
+object ControlStructures extends App {
   // You can follow your progress using the tests in `ControlStructuresSpec`.
   //   sbt "testOnly com.evolutiongaming.bootcamp.basics.ControlStructuresSpec"
 
@@ -71,7 +71,7 @@ object ControlStructures {
       case x           => Left(s"Month $x is too large")
     }
 
-  // Question. How would you improve `monthName`?
+  // Question. How would you improve `monthName`? make Collection of months
   // Question. What would you use in its place if you wanted to more properly handle multiple locales?
 
   sealed trait Shape
@@ -112,7 +112,12 @@ object ControlStructures {
   }
 
   // Exercise. Implement a "Fizz-Buzz" function using pattern matching:
-  def fizzBuzz2(n: Int): String = ???
+  def fizzBuzz2(n: Int): String = (n % 3, n % 5) match {
+    case (0, 0) => "fizzbuzz"
+    case (0, _) => "fizz"
+    case (_, 0) => "buzz"
+    case _ => n.toString
+  }
 
   // Recursion
   //
@@ -125,7 +130,12 @@ object ControlStructures {
 
   // Question. What are the risks of List#head and List#tail? How can you refactor `sum1` to avoid these invocations?
 
-  // Question. What are the risks of recursion when applied without sufficient foresight?
+  def sum1New(list: List[Int], acc: Int = 0): Int = list match {
+    case Nil => acc
+    case first :: rest => sum1New(rest, acc + first)
+  }
+
+  // Question. What are the risks of recursion when applied without sufficient foresight? Stack overflow
 
   // @tailrec annotation verifies that a method will be compiled with tail call optimisation.
   @tailrec
@@ -156,14 +166,16 @@ object ControlStructures {
   //
   // Thus `applyNTimesForInts(_ + 1, 4)(3)` should return `((((3 + 1) + 1) + 1) + 1)` or `7`.
   def applyNTimesForInts(f: Int => Int, n: Int): Int => Int = { x: Int =>
-    f(x + n) // replace with a correct implementation
+    if (n == 1) f(x)
+    else if (n > 1) applyNTimesForInts(f, n - 1)(f(x))
+    else x
   }
 
   // Exercise: Convert the function `applyNTimesForInts` into a polymorphic function `applyNTimes`:
   def applyNTimes[A](f: A => A, n: Int): A => A = { x: A =>
-    // replace with correct implementation
-    println(n)
-    f(x)
+    if (n == 1) f(x)
+    else if (n > 1) applyNTimes(f, n - 1)(f(x))
+    else x
   }
 
   // `map`, `flatMap` and `filter` are not control structures, but methods that various collections (and
@@ -180,7 +192,7 @@ object ControlStructures {
     }
   }
 
-  // Question. What is the value of this code?
+  // Question. What is the value of this code? List(2, 4, 6)
   val listMapExample = List(1, 2, 3).map(x => x * 2)
 
   // As we will see in later lessons, `map` is a method that `Functor`-s have, and there are more `Functor`-s
@@ -198,10 +210,10 @@ object ControlStructures {
     }
   }
 
-  // Question. What is the value of this code?
+  // Question. What is the value of this code? List(1, 2, 2, 4, 3, 6)
   val listFlatMapExample = List(1, 2, 3).flatMap(x => List(x, x * 2))
 
-  // Question. Do you think only collections can have `flatMap`?
+  // Question. Do you think only collections can have `flatMap`? flatMap future?
 
   // `filter` takes a predicate function returning a boolean and - for collections - returns a collection
   // with only these elements which satisfy this predicate.
@@ -213,7 +225,7 @@ object ControlStructures {
     }
   }
 
-  // Question. What is the value of this code?
+  // Question. What is the value of this code? List(2)
   val listFilterExample = List(1, 2, 3).filter(_ % 2 == 0)
 
   // For Comprehensions
@@ -240,8 +252,10 @@ object ControlStructures {
 
   val d = a.flatMap(x => b.map(y => x * y))
 
-  // Question: What is the value of `c` above?
-  // Question: What is the value of `d` above?
+  // Question: What is the value of `c` above? List(10, 100, 20, 200, 30, 300)
+  // Question: What is the value of `d` above? List(10, 100, 20, 200, 30, 300)
+  println(c)
+  println(d)
 
   // You can also add `if` guards to `for` comprehensions:
   val e = for {
@@ -251,7 +265,8 @@ object ControlStructures {
     y <- b // generator
   } yield x + y
 
-  // Question. What is the value of `e` above?
+  // Question. What is the value of `e` above? List(11, 101, 13, 103)
+  println(e)
 
   // In idiomatic functional Scala, much of the code ends up written in "for comprehensions".
   // Exercise. Implement `makeTransfer` using `for` comprehensions and the methods provided in `UserService`.
@@ -302,7 +317,11 @@ object ControlStructures {
   //
   // Use a "for comprehension" in your solution.
 
-  val AProductB: Set[(Int, Boolean)] = Set()
+  val AProductB: Set[(Int, Boolean)] =
+    for {
+      a <- Set(0, 1 ,2)
+      b <- Set(true, false)
+    } yield (a, b)
 
   // Exercise:
   //
@@ -314,7 +333,9 @@ object ControlStructures {
   //
   // Use "map" and `++` (`Set` union operation) in your solution.
 
-  val ASumB: Set[Either[Int, Boolean]] = Set()
+  val ASumB: Set[Either[Int, Boolean]] = {
+    ???
+  }
 
   // Scala inherits the standard try-catch-finally construct from Java:
   def printFile(fileName: String): Unit = {

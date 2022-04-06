@@ -159,7 +159,11 @@ object LinkedList extends App {
         Some((2, 8)) for List(1, 2, 8)
    */
   def findGap(l: List[Int]): Option[(Int, Int)] = {
-    ???
+    l match {
+      case Nil | _ :: Nil => None
+      case first :: second :: _ if first + 1 != second => Some((first, second))
+      case _ => findGap(l.tail)
+    }
   }
 
   // recursion
@@ -177,9 +181,28 @@ object LinkedList extends App {
   list.reduceRight(_ + _)
 
   // try to implement min different ways (fold, reduce, recursion)
-  def min(list: List[Int]): Option[Int] = {
-    ???
-  }
+  def minRec(list: List[Int]): Option[Int] =
+    list match {
+      case Nil => None
+      case last :: Nil => Some(last)
+      case first :: second :: tail =>
+        if (first < second) minRec(first +: tail)
+        else minRec(second +: tail)
+    }
+
+  def minFold(list: List[Int]): Option[Int] =
+    list match {
+      case Nil => None
+      case last :: Nil => Some(last)
+      case head :: tail => Some(tail.fold(head)((first, second) => if (first < second) first else second))
+    }
+
+  def minRed(list: List[Int]): Option[Int] =
+    list match {
+      case Nil => None
+      case last :: Nil => Some(last)
+      case _ => Some(list.reduce((first, second) => if (first < second) first else second))
+    }
 
   // Implement scanLeft (not using scans ofc)
   def scanLeft[T](zero: T)(list: List[T])(f: (T, T) => T): List[T] = {

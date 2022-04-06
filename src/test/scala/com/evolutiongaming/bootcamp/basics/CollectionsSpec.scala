@@ -21,12 +21,28 @@ class CollectionsSpec extends AnyFlatSpec with ScalaCheckDrivenPropertyChecks {
     findGap((1 to 100).toList) shouldEqual None
   }
 
-  "min" should "work correctly on empty" in {
-    min(Nil) shouldEqual None
+  "min recursion" should "work correctly on empty" in {
+    minRec(Nil) shouldEqual None
   }
 
-  "min" should "work correctly on non empty" in {
-    min(Random.shuffle(1 to 100).toList) shouldEqual Some(1)
+  "min recursion" should "work correctly on non empty" in {
+    minRec(Random.shuffle(1 to 100).toList) shouldEqual Some(1)
+  }
+
+  "min fold" should "work correctly on empty" in {
+    minFold(Nil) shouldEqual None
+  }
+
+  "min fold" should "work correctly on non empty" in {
+    minFold(Random.shuffle(1 to 100).toList) shouldEqual Some(1)
+  }
+
+  "min reduce" should "work correctly on empty" in {
+    minRed(Nil) shouldEqual None
+  }
+
+  "min reduce" should "work correctly on non empty" in {
+    minRed(Random.shuffle(1 to 100).toList) shouldEqual Some(1)
   }
 
   "scanLeft" should "work correctly on numbers" in {
