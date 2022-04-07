@@ -71,7 +71,7 @@ object ControlStructures extends App {
     }
   }
 
-  // Question. How would you improve `monthName`? make Collection of months
+  // Question. How would you improve `monthName`? use predefined month library
   // Question. What would you use in its place if you wanted to more properly handle multiple locales?
 
   sealed trait Shape
@@ -295,9 +295,37 @@ object ControlStructures extends App {
     // findUserId to find UserId, validateAmount on the amount, findBalance to find previous
     // balances, and then updateAccount for both userId-s (with a positive and negative
     // amount, respectively):
+// Transfer to flatmap!
     println(s"$service, $fromUserWithName, $toUserWithName, $amount")
     import service._
-    ???
+    (validateUserName(fromUserWithName), validateUserName(toUserWithName)) match {
+      case (Left(e1), Left(e2)) => Left(e1 + e2)
+      case (Left(e), _) => Left(e)
+      case (_, Left(e)) => Left(e)
+      case _ =>
+        (findUserId(fromUserWithName), findUserId(toUserWithName)) match {
+          case (Left(e1), Left(e2)) => Left(e1 + e2)
+          case (Left(e), _) => Left(e)
+          case (_, Left(e)) => Left(e)
+          case (Right(fromId), Right(toId)) =>
+            validateAmount(amount) match {
+              case Left(e) => Left(e)
+              case _ =>
+                (findBalance(fromId), findBalance(toId)) match {
+                  case (Left(e1), Left(e2)) => Left(e1 + e2)
+                  case (Left(e), _) => Left(e)
+                  case (_, Left(e)) => Left(e)
+                  case (Right(fromBalance), Right(toBalance)) =>
+                    (updateAccount(fromId, fromBalance, -amount), updateAccount(toId, toBalance, amount)) match {
+                      case (Left(e1), Left(e2)) => Left(e1 + e2)
+                      case (Left(e), _) => Left(e)
+                      case (_, Left(e)) => Left(e)
+                      case (Right(fromAccount), Right(toAccount)) => Right(fromAccount, toAccount)
+                    }
+                }
+            }
+        }
+    }
   }
 
   // Question. What are the questions would you ask - especially about requirements - before implementing
@@ -317,7 +345,9 @@ object ControlStructures extends App {
   //
   // Use a "for comprehension" in your solution.
 
-  val AProductB: Set[(Int, Boolean)] =
+  // Why not working with val?
+  //val AProductB: Set[(Int, Boolean)] =
+  def AProductB: Set[(Int, Boolean)] =
     for {
       a <- Set(0, 1 ,2)
       b <- Set(true, false)
@@ -333,8 +363,12 @@ object ControlStructures extends App {
   //
   // Use "map" and `++` (`Set` union operation) in your solution.
 
-  val ASumB: Set[Either[Int, Boolean]] = {
-    ???
+  //val ASumB: Set[Either[Int, Boolean]] = {
+  def ASumB: Set[Either[Int, Boolean]] = {
+    (Set(0, 1, 2) ++ Set(true, false)).map {
+      case a: Int => Left(a)
+      case b: Boolean => Right(b)
+    }
   }
 
   // Scala inherits the standard try-catch-finally construct from Java:
