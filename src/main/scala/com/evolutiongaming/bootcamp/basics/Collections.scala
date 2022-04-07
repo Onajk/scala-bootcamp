@@ -197,22 +197,37 @@ object LinkedList extends App {
       case head :: tail => Some(tail.fold(head)((first, second) => if (first < second) first else second))
     }
 
-  def minRed(list: List[Int]): Option[Int] =
+  def minRed(list: List[Int]): Option[Int] = {
     list match {
       case Nil => None
       case last :: Nil => Some(last)
       case _ => Some(list.reduce((first, second) => if (first < second) first else second))
     }
+  }
 
   // Implement scanLeft (not using scans ofc)
   def scanLeft[T](zero: T)(list: List[T])(f: (T, T) => T): List[T] = {
-    ???
+    list match {
+      case Nil => List(zero)
+      case first :: rest => zero :: scanLeft(f(zero, first))(rest)(f)
+    }
   }
 
   // https://twitter.com/allenholub/status/1357115515672555520/photo/1
   // pass the interview
+  // input = "aaaabbbcca"
+  // output = [('a', 4), ('b', 3), ('c', 2), ('a', 1)]
   def count(s: String): List[(Char, Int)] = {
-    ???
+    def loop(charList: List[Char], sum: Int, accList: List[(Char, Int)]): List[(Char, Int)] =
+      charList match {
+        case Nil => accList
+        case last :: Nil => accList :+ (last, sum)
+        case first :: second :: rest =>
+          if (first != second) loop(second :: rest, 1, accList :+ (first, sum))
+          else loop(second :: rest, sum + 1, accList)
+      }
+
+    loop(s.toList, 1, List())
   }
 
   /*
