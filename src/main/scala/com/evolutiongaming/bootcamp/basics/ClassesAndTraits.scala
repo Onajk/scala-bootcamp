@@ -64,7 +64,7 @@ object ClassesAndTraits extends App {
   }
 
   sealed trait Movable {
-    def move(dx: Double, dy: Double): Shape
+    def move(dx: Double, dy: Double): Movable
   }
 
   final case class Point(x: Double, y: Double) extends Shape {
@@ -82,7 +82,7 @@ object ClassesAndTraits extends App {
     override def maxX: Double = centerX + radius
     override def minY: Double = centerY - radius
     override def maxY: Double = centerY + radius
-    override def move(dx: Double, dy: Double): Circle = Circle(centerX + dx, centerY + dy, radius)
+    override def move(dx: Double, dy: Double): Circle = copy(centerX = centerX + dx, centerY = centerY + dy)
   }
 
   val testPoint = Point(5, 6)
@@ -127,7 +127,6 @@ object ClassesAndTraits extends App {
   //
   def minimumBoundingRectangle(objects: Set[Bounded]): Bounded =
     new Bounded {
-      // if needed, fix the code to be correct
       override def minX: Double = objects.map(_.minX).min
       override def maxX: Double = objects.map(_.maxX).max
       override def minY: Double = objects.map(_.minY).min

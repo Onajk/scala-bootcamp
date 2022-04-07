@@ -1,7 +1,6 @@
 package com.evolutiongaming.bootcamp.basics
 
 import java.io.FileNotFoundException
-
 import scala.annotation.tailrec
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
@@ -34,7 +33,7 @@ object ControlStructures extends App {
   // those which divide with 5, and returning the input number as a string for other numbers:
   def fizzBuzz1(n: Int): String = {
     if (n % 3 == 0) {
-      if ((n / 3) % 5 == 0) "fizzbuzz"
+      if (n % 5 == 0) "fizzbuzz"
       else "fizz"
     } else if (n % 5 == 0) "buzz"
     else n.toString
@@ -53,7 +52,7 @@ object ControlStructures extends App {
   // }
 
   type ErrorMessage = String
-  def monthName(x: Int): Either[ErrorMessage, String] =
+  def monthName(x: Int): Either[ErrorMessage, String] = {
     x match {
       case 1           => Right("January")
       case 2           => Right("February")
@@ -70,6 +69,7 @@ object ControlStructures extends App {
       case x if x <= 0 => Left(s"Month $x is too small")
       case x           => Left(s"Month $x is too large")
     }
+  }
 
   // Question. How would you improve `monthName`? make Collection of months
   // Question. What would you use in its place if you wanted to more properly handle multiple locales?
