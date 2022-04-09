@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
 
-object ControlStructures extends App {
+object ControlStructures {
   // You can follow your progress using the tests in `ControlStructuresSpec`.
   //   sbt "testOnly com.evolutiongaming.bootcamp.basics.ControlStructuresSpec"
 
@@ -345,9 +345,8 @@ object ControlStructures extends App {
   //
   // Use a "for comprehension" in your solution.
 
-  // Why not working with val?
-  //val AProductB: Set[(Int, Boolean)] =
-  def AProductB: Set[(Int, Boolean)] =
+  // Why not working with val when extends App?
+  val AProductB: Set[(Int, Boolean)] =
     for {
       a <- Set(0, 1 ,2)
       b <- Set(true, false)
@@ -363,8 +362,7 @@ object ControlStructures extends App {
   //
   // Use "map" and `++` (`Set` union operation) in your solution.
 
-  //val ASumB: Set[Either[Int, Boolean]] = {
-  def ASumB: Set[Either[Int, Boolean]] = {
+  val ASumB: Set[Either[Int, Boolean]] = {
     (Set(0, 1, 2) ++ Set(true, false)).map {
       case a: Int => Left(a)
       case b: Boolean => Right(b)

@@ -81,7 +81,11 @@ object DataStructures {
   // Exercise. Write a function that checks if all values in a `List` are equal.
   // Think about what you think your function should return if `list` is empty, and why.
   def allEqual[T](list: List[T]): Boolean = {
-    false // TODO: implement
+    list match {
+      case Nil => false
+      case _ :: Nil => true
+      case head :: tail => tail.forall(_ == head)
+    }
   }
 
   // Maps
@@ -106,7 +110,7 @@ object DataStructures {
 
   val questionableMap = vegetableWeights ++ vegetablePrices
 
-  // Question. Why should `questionableMap` be considered questionable?
+  // Question. Why should `questionableMap` be considered questionable? Losing information on the same key
 
   val vegetableAmounts = Map(
     "tomatoes" -> 17,
@@ -123,15 +127,19 @@ object DataStructures {
   // `vegetableAmounts` and prices per unit from `vegetablePrices`. Assume the price is 10 if not available
   // in `vegetablePrices`.
   val totalVegetableCost: Int = {
-    17 // implement here
+    vegetableAmounts.foldLeft(0)((total, vegetable) => total + vegetablePrices.getOrElse(vegetable._1, 10) * vegetable._2)
   }
 
   // Exercise. Given the vegetable weights (per 1 unit of vegetable) in `vegetableWeights` and vegetable
   // amounts (in units) in `vegetableAmounts`, calculate the total weight per type of vegetable, if known.
   //
   // For example, the total weight of "olives" is 2 * 32 == 64.
-  val totalVegetableWeights: Map[String, Int] = { // implement here
-    Map()
+  val totalVegetableWeights: Map[String, Int] = {
+    vegetableAmounts
+      .foldLeft(Map.empty[String, Int])((collection, vegetable) => vegetableWeights.get(vegetable._1) match {
+        case None => collection
+        case Some(weight) => collection + (vegetable._1 -> weight * vegetable._2)
+      })
   }
 
   // Ranges and Sequences
@@ -192,9 +200,12 @@ object DataStructures {
   //   - For other `n`, for each `set` element `elem`, generate all subsets of size `n - 1` from the set
   //     that don't include `elem`, and add `elem` to them.
   def allSubsetsOfSizeN[A](set: Set[A], n: Int): Set[Set[A]] = {
-    // replace with correct implementation
-    println(n)
-    Set(set)
+    if (n == 1) set.map(x => Set(x))
+    else
+      for {
+        elem <- set
+        subset <- allSubsetsOfSizeN(set.filter(_ != elem), n - 1)
+      } yield subset + elem
   }
 
   // Homework
@@ -214,5 +225,5 @@ object DataStructures {
   //
   // Input `Map("a" -> 1, "b" -> 2, "c" -> 4, "d" -> 1, "e" -> 0, "f" -> 2, "g" -> 2)` should result in
   // output `List(Set("e") -> 0, Set("a", "d") -> 1, Set("b", "f", "g") -> 2, Set("c") -> 4)`.
-  def sortConsideringEqualValues[T](map: Map[T, Int]): List[(Set[T], Int)] = ???
+  def sortConsideringEqualValues[T](map: Map[T, Int]): List[(Set[T], Int)] = map.groupBy(x => x._2).toList.map(x => x._2.keys.toSet -> x._1)
 }
