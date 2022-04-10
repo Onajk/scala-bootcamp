@@ -52,7 +52,7 @@ object ControlStructuresHomework2 {
 
     // Consider how to handle extra whitespace gracefully (without errors).
 
-    x.split(" ").toList match {
+    x.split(" ").toList.map(_.trim) match {
       case Nil => Left(ErrorMessage("Empty input."))
       case x :: xs => x match {
         case "divide" => xs.map(_.toDouble) match {

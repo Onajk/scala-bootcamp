@@ -295,8 +295,20 @@ object ControlStructures {
     // findUserId to find UserId, validateAmount on the amount, findBalance to find previous
     // balances, and then updateAccount for both userId-s (with a positive and negative
     // amount, respectively):
-// Transfer to flatmap!
     println(s"$service, $fromUserWithName, $toUserWithName, $amount")
+    import service._
+    validateUserName(fromUserWithName).flatMap(_ => validateUserName(toUserWithName).flatMap(_ => validateAmount(amount)
+      .flatMap(_ => findUserId(fromUserWithName).flatMap(fromId => findBalance(fromId).flatMap(fromBalance => updateAccount(fromId, fromBalance, -amount)
+        .flatMap(fromAmount => findUserId(toUserWithName).flatMap(toId => findBalance(toId).flatMap(toBalance => updateAccount(toId, toBalance, amount)
+          .map(toAmount => (fromAmount, toAmount))))))))))
+  }
+
+  def makeTransferWithPattern(
+      service: UserService,
+      fromUserWithName: String,
+      toUserWithName: String,
+      amount: Amount
+    ): Either[ErrorMessage, (Amount, Amount)] = {
     import service._
     (validateUserName(fromUserWithName), validateUserName(toUserWithName)) match {
       case (Left(e1), Left(e2)) => Left(e1 + e2)

@@ -8,10 +8,10 @@ object FunctionsDescoped {
     count += 1
     newId
   }
-  def idPure(/* ??? */): (Int, Int) = ???
+  def idPure(count: Int): (Int, Int) = (count + 1, count)
 
   // Implement `identity` which returns its input unchanged. Do not use scala.Predef.identity
-  def identity[A](x: A): A = ???
+  def identity[A](x: A): A = x
 
   // Question. What do you expect?
 
@@ -53,11 +53,10 @@ object FunctionsDescoped {
   List(1, 2, 3).map(_ + 2).map(_.toString)
   List(1, 2, 3).map(((x: Int) => x + 2).andThen(x => x.toString))
 
-
   // Exercise. Implement `andThen` and `compose` which pipes the result of one function to the input of another function
-  def compose[A, B, C](f: B => C, g: A => B): A => C = ???
+  def compose[A, B, C](f: B => C, g: A => B): A => C = { x => f(g(x)) }
 
-  def andThen[A, B, C](f: A => B, g: B => C): A => C = ???
+  def andThen[A, B, C](f: A => B, g: B => C): A => C = { x => g(f(x)) }
 
 
   // --
@@ -85,24 +84,24 @@ object FunctionsDescoped {
   // JSON is a recursive data structure
   sealed trait Json
 
-  case class JObject(/* ??? */) extends Json
+  case class JObject(value: List[Json]) extends Json
 
-  case class JArray(/* ??? */) extends Json
+  case class JArray(value: List[String]) extends Json
 
-  case class JString(/* ??? */) extends Json
+  case class JString(value: String) extends Json
 
   case class JNumber(value: BigDecimal) extends Json
 
   case class JBoolean(value: Boolean) extends Json
 
-  // Question. What did I miss?
-
+  // Question. What did I miss? null type
+  case class JNull(value: Null) extends Json
   // --
 
 
 
   // Task 1. Represent `rawJson` string via defined classes
-  val data: Json = JObject(/* ??? */)
+  val data: Json = JObject(???)
 
   // Task 2. Implement a function `asString` to print given Json data as a json string
 

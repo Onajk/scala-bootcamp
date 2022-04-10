@@ -1,6 +1,7 @@
 package com.evolutiongaming.bootcamp.functions
 
 import java.time.Instant
+import scala.util.Try
 
 object Functions {
 
@@ -68,17 +69,17 @@ object Functions {
   trait MyMap[K, V] extends (K => V)
 
   // Question. What function should we extend to check if an element belongs to a set?
-  trait MySet[A] // extends ???
+  trait MySet[A] extends (A => Boolean)
 
   // Question. What function should we extend to return a value by its index?
-  trait MySeq[A] // extends ???
+  trait MySeq[A] extends (Int => A)
 
   // POLYMORPHIC FUNCTIONS
 
   // Polymorphic functions have at least one type parameter.
 
   // Exercise. Implement `mapOption` function without calling `Option` APIs.
-  def mapOption[A, B](option: Option[A], f: A => B): Option[B] = ???
+  def mapOption[A, B](option: Option[A], f: A => B): Option[B] = option.map(x => f(x))
 
   // FUNCTION COMPOSITION
 
@@ -97,7 +98,7 @@ object Functions {
     case "ping" => "pong"
   }
 
-  // Question. What happens next?
+  // Question. What happens next? MatchError
   // pingPong("hi")
 
   // With standard functions we cannot find out beforehand whether the function is applicable to a certain
@@ -159,15 +160,15 @@ object Functions {
   // - works with shared mutable state;
   // ...
 
-  // Question. Why usage of `null` breaks function purity?
+  // Question. Why usage of `null` breaks function purity? May throw exception?
 
-  // Question. Is `plus` a pure function? Why?
+  // Question. Is `plus` a pure function? Why? Yes
   def plus(a: Int, b: Int): Int = a + b
 
-  // Question. Is `mapLookup` a pure function? Why?
+  // Question. Is `mapLookup` a pure function? Why? No, key maybe missing (exception)
   def mapLookup(map: Map[String, Int], key: String): Int = map(key)
 
-  // Question. If a function returns the same value for all inputs, is it pure?
+  // Question. If a function returns the same value for all inputs, is it pure? No?
 
   // Building programs with pure functions has the following benefits:
   // - Fearless refactoring. Any function call can be replaced with its return value.
@@ -179,20 +180,20 @@ object Functions {
   // Exercises. Convert the following functions into pure functions. Replace ??? with correct return types.
 
   def parseDate(s: String): Instant = Instant.parse(s)
-  def parseDatePure(s: String): ??? = ???
+  def parseDatePure(s: String): Try[Instant] = Try(Instant.parse(s))
 
   def divide(a: Int, b: Int): Int = a / b
-  def dividePure(a: Int, b: Int): ??? = ???
+  def dividePure(a: Int, b: Int): Option[Int] = if (b != 0) Some(a / b) else None
 
   def isAfterNow(date: Instant): Boolean = date.isAfter(Instant.now())
-  def isAfterNowPure(/* ??? */): Boolean = ???
+  def isAfterNowPure(date: Instant, now: Instant): Boolean = date.isAfter(now)
 
   case class NonEmptyList[T](head: T, rest: List[T])
   def makeNonEmptyList[T](list: List[T]): NonEmptyList[T] = {
     if (list.isEmpty) println("Error: list must not be empty")
     NonEmptyList(list.head, list.tail)
   }
-  def makeNonEmptyListPure[T](list: List[T]): ??? = ???
+  def makeNonEmptyListPure[T](list: List[T]): Try[NonEmptyList[T]] = Try(NonEmptyList(list.head, list.tail))
 
   // Attributions and useful links:
   // https://jim-mcbeath.blogspot.com/2009/05/scala-functions-vs-methods.html
