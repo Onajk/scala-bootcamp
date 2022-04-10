@@ -79,7 +79,11 @@ object AlgebraicDataTypes {
   // can be used. However, it is rather syntax-heavy and cannot be combined with value classes.
   sealed abstract case class Time private (hour: Int, minute: Int)
   object Time {
-    def create(hour: Int, minute: Int): Either[String, Time] = Right(new Time(hour, minute) {})
+    def create(hour: Int, minute: Int): Either[String, Time] = (hour, minute) match {
+      case (h, _) if h < 0 || h > 23 => Left("Invalid hour value")
+      case (_, m) if m < 0 || m > 59 => Left("Invalid minute value")
+      case _ => Right(new Time(hour, minute) {})
+    }
   }
 
   // Exercise. Implement the smart constructor for `Time` that only permits values from 00:00 to 23:59 and
