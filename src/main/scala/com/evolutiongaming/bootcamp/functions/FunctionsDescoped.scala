@@ -84,9 +84,9 @@ object FunctionsDescoped {
   // JSON is a recursive data structure
   sealed trait Json
 
-  case class JObject(value: List[Json]) extends Json
+  case class JObject(fields: Map[String, Json]) extends Json
 
-  case class JArray(value: List[String]) extends Json
+  case class JArray(items: List[Json]) extends Json
 
   case class JString(value: String) extends Json
 
@@ -95,26 +95,49 @@ object FunctionsDescoped {
   case class JBoolean(value: Boolean) extends Json
 
   // Question. What did I miss? null type
-  case class JNull(value: Null) extends Json
+  case object Null extends Json
   // --
 
-
-
   // Task 1. Represent `rawJson` string via defined classes
-  val data: Json = JObject(???)
+  val data: Json = JObject(Map(
+    "username" -> JString("John"),
+    "address" -> JObject(Map(
+      "country" -> JString("UK"),
+      "postalCode" -> JNumber(45765))),
+    "eBooks" -> JArray(List(
+      JString("Scala"),
+      JString("Dotty")))
+    ))
 
   // Task 2. Implement a function `asString` to print given Json data as a json string
 
-  def asString(data: Json): String = ???
+  def asString(data: Json): String = data match {
+    case Null => ""
+    case JBoolean(value) => s"$value"
+    case JNumber(value) => s"$value"
+    case JString(value) => s"\"$value\""
+    case JArray(items) => "[" + items.map(x => asString(x)).mkString(", ") + "]"
+    case JObject(fields) => "{" + fields.toList.map(x => s"\"${x._1}\":${asString(x._2)}").mkString(", ") + "}"
+  }
 
   // Task 3. Implement a function that validate our data whether it contains JNumber with negative value or not
 
-  def isContainsNegative(data: Json): Boolean = ???
+  def isContainsNegative(data: Json): Boolean =
+    data match {
+      case JNumber(value) if value < 0 => true
+      case JArray(items) => items.exists(x => isContainsNegative(x))
+      case JObject(fields) => fields.exists(x => isContainsNegative(x._2))
+      case _ => false
+    }
 
   // Task 4. Implement a function that return the nesting level of json objects.
   // Note. top level json has level 1, we can go from top level to bottom only via objects
 
-  def nestingLevel(data: Json): Int = ???
+  def nestingLevel(data: Json): Int =
+    data match {
+      case JObject(fields) => fields.map(x => 1 + nestingLevel(x._2)).max
+      case _ => 0
+    }
 
   // See FunctionsSpec for expected results
 

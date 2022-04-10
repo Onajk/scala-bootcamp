@@ -69,7 +69,10 @@ object AlgebraicDataTypes {
   // Exercise. Create a smart constructor for `GameLevel` that only permits levels from 1 to 80 (inclusive).
   final case class GameLevel private (value: Int) extends AnyVal
   object GameLevel {
-    def create(value: Int): Option[GameLevel] = ???
+    def create(value: Int): Option[GameLevel] = value match {
+      case x if x >= 1 && x <= 80 => Some(GameLevel(x))
+      case _ => None
+    }
   }
 
   // To disable creating case classes in any other way besides smart constructor, the following pattern
