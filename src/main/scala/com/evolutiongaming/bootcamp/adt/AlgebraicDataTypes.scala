@@ -61,6 +61,10 @@ object AlgebraicDataTypes {
   // Question. Can you come up with an example, where using type aliases would make sense?
 
   // Exercise. Rewrite the product type `Person`, so that it uses value classes.
+  final case class PersonName(name: String) extends AnyVal
+  final case class PersonSurname(surname: String) extends AnyVal
+  final case class PersonAge(age: Int) extends AnyVal
+  final case class Person2(name: PersonName, surname: PersonSurname, age: PersonAge)
 
   // SMART CONSTRUCTORS
 
@@ -77,9 +81,10 @@ object AlgebraicDataTypes {
 
   // To disable creating case classes in any other way besides smart constructor, the following pattern
   // can be used. However, it is rather syntax-heavy and cannot be combined with value classes.
+  type ErrorMessage = String
   sealed abstract case class Time private (hour: Int, minute: Int)
   object Time {
-    def create(hour: Int, minute: Int): Either[String, Time] = (hour, minute) match {
+    def create(hour: Int, minute: Int): Either[ErrorMessage, Time] = (hour, minute) match {
       case (h, _) if h < 0 || h > 23 => Left("Invalid hour value")
       case (_, m) if m < 0 || m > 59 => Left("Invalid minute value")
       case _ => Right(new Time(hour, minute) {})
@@ -89,7 +94,7 @@ object AlgebraicDataTypes {
   // Exercise. Implement the smart constructor for `Time` that only permits values from 00:00 to 23:59 and
   // returns "Invalid hour value" or "Invalid minute value" strings in `Left` when appropriate.
 
-  // Question. Is using `String` to represent `Left` a good idea? Why?
+  // Question. Is using `String` to represent `Left` a good idea? Why? no, better use type ErrorMessage = String
 
   // SUM TYPES
 
@@ -108,7 +113,7 @@ object AlgebraicDataTypes {
   // have by adding the number of such possibilities for the types it enumerates. The resulting number
   // is called the arity of the sum type.
 
-  // Question. What is the arity of the sum type `Bool`?
+  // Question. What is the arity of the sum type `Bool`? 2
 
   // The power of sum and product types is unleashed when they are combined together. For example, consider a
   // case where multiple different payment methods need to be supported. (This is an illustrative example and
@@ -142,7 +147,12 @@ object AlgebraicDataTypes {
     creditCardService: CreditCardService,
     cashService: CashService,
   ) {
-    def processPayment(amount: BigDecimal, method: PaymentMethod): PaymentStatus = ???
+    def processPayment(amount: BigDecimal, method: PaymentMethod): PaymentStatus = method match {
+      case BankAccount(accountNumber) => bankAccountService.processPayment(amount, accountNumber)
+      case CreditCard(cardNumber, validityDate) => creditCardService.processPayment(amount, CreditCard(cardNumber, validityDate))
+      case Cash => cashService.processPayment(amount)
+      case _ => PaymentStatus("Payment canceled.")
+    }
   }
 
   // Let's compare that to `NaivePaymentService.processPayment` implementation, which does not use ADTs, but
@@ -154,7 +164,11 @@ object AlgebraicDataTypes {
       bankAccountNumber: Option[String],
       validCreditCardNumber: Option[String],
       isCash: Boolean,
-    ): String = ???
+    ): String =
+      if (bankAccountNumber.isDefined) s"Paid $amount with bank account ${bankAccountNumber.get}."
+      else if (validCreditCardNumber.isDefined) s"Paid $amount with credit card ${validCreditCardNumber.get}."
+      else if (isCash) s"Paid $amount in cash."
+      else "Payment canceled."
   }
 
   // Attributions and useful links:
