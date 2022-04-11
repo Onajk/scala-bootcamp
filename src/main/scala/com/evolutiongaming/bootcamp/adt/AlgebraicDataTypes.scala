@@ -28,10 +28,10 @@ object AlgebraicDataTypes {
   // have by multiplying the number of such possibilities for the types it combines. The resulting number
   // is called the arity of the product type.
 
-  // Question. What is the arity of the product type `(Boolean, Boolean)`?
+  // Question. What is the arity of the product type `(Boolean, Boolean)`? 4
   type DoubleBoolean = (Boolean, Boolean)
 
-  // Question. What is the arity of the product type `Person`?
+  // Question. What is the arity of the product type `Person`? infinite
   final case class Person(name: String, surname: String, age: Int)
 
   // Question. `Int`, `Double`, `String`, etc. are useful types from the Scala standard library, which can
