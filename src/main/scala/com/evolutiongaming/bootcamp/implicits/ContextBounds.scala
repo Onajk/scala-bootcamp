@@ -2,24 +2,33 @@ package com.evolutiongaming.bootcamp.implicits
 
 import akka.cluster.client.protobuf.msg.ClusterClientMessages.Contacts
 
+import scala.annotation.tailrec
+
 object ContextBounds {
 
   object Exercise1 {
 
     // Let's revisit some functions we implemented while studying implicit classes:
-    def concat(a: Int, b: Int): Int = ???
+    def concat(a: Int, b: Int): Int = (a.toString + b.toString).toInt
 
     // Exercise 1: Implement repeat functions for various types.
     // For `Int` using `concat` function above. For others, use built-in methods.
 
     // `repeat(72, 3)` should return `727272`
-    def repeat(a: Int, times: Int): Int = ???
+    def repeat(a: Int, times: Int): Int = {
+      @tailrec
+      def loop(result: Int, timesLeft: Int): Int =
+        if (timesLeft == 1) result
+        else loop(concat(a, result), timesLeft - 1)
+
+      loop(a, times)
+    }
 
     // `repeat("Scala", 3)` should return `"ScalaScalaScala"`
-    def repeat(a: String, times: Int): String = ???
+    def repeat(a: String, times: Int): String = a * times
 
     // `repeat(List(10, 20, 30), 3)` should return `List(10, 20, 30, 10, 20, 30, 10, 20, 30)`
-    def repeat(a: List[Int], times: Int): List[Int] = ???
+    def repeat(a: List[Int], times: Int): List[Int] = ((a.mkString(" ") + " ") * times).split(" ").toList.map(_.toInt)
 
   }
 
@@ -32,6 +41,7 @@ object ContextBounds {
   // Exercise 2: Implement repeat functions so it works for `Int`, `String` and `List[Int]`.
   object Exercise2 {
     def repeat[T](a: T, times: Int): T = ???
+    // impossible?
   }
 
   // (spoiler was deleted here, will be told by lecturer)
@@ -48,22 +58,29 @@ object ContextBounds {
   }
   object Concatenable {
     val forInt: Concatenable[Int] = new Concatenable[Int] {
-      def concat(a: Int, b: Int): Int = ???
+      def concat(a: Int, b: Int): Int = (a.toString + b.toString).toInt
     }
     val forString: Concatenable[String] = new Concatenable[String] {
-      def concat(a: String, b: String): String = ???
+      def concat(a: String, b: String): String = a + b
     }
     val forListInt: Concatenable[List[Int]] = new Concatenable[List[Int]] {
-      def concat(a: List[Int], b: List[Int]): List[Int] = ???
+      def concat(a: List[Int], b: List[Int]): List[Int] = a ++ b
     }
   }
 
   object Exercise3 {
-    def repeat[T](a: T, times: Int, concatenable: Concatenable[T]): T = ???
+    def repeat[T](a: T, times: Int, concatenable: Concatenable[T]): T = {
+      @tailrec
+      def loop(result: T, timesLeft: Int): T =
+        if (timesLeft == 1) result
+        else loop(concatenable.concat(a, result), timesLeft - 1)
+
+      loop(a, times)
+    }
   }
 
   // Do you find this way convenient / readable? What else we could do to
-  // improve it?
+  // improve it? Make concatenable auto use by compiler
 
   // Exercise 4:
   // - Make the `repeat` method above more convenient to use by moving

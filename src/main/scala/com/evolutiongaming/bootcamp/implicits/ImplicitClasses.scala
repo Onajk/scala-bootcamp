@@ -47,11 +47,7 @@ object ImplicitClasses {
     // Implement a `pow` method which calculates a power of number.
     //
     // I.e. `pow(4, 2) == 1` and `pow(3, 3) == 27`.
-    def pow(base: Int, exponent: Int): Int = {
-      if (exponent < 0) 0
-      else if (exponent == 0) 1
-      else base * pow(base, exponent - 1)
-    }
+    def pow(base: Int, exponent: Int): Int = math.pow(base, exponent).toInt
 
     // Exercise 2:
     // Implement a concat method which concatenates two positive `Int`
