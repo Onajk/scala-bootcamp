@@ -128,11 +128,12 @@ object ControlStructures {
     if (list.isEmpty) 0
     else list.head + sum1(list.tail)
 
-  // Question. What are the risks of List#head and List#tail? How can you refactor `sum1` to avoid these invocations?
+  // Question. What are the risks of List#head and List#tail? How can you refactor `sum1` to avoid these invocations? use Pattern Matching
 
-  def sum1New(list: List[Int], acc: Int = 0): Int = list match {
+  @tailrec
+  def sum1TailRec(list: List[Int], acc: Int = 0): Int = list match {
     case Nil => acc
-    case first :: rest => sum1New(rest, acc + first)
+    case first :: rest => sum1TailRec(rest, acc + first)
   }
 
   // Question. What are the risks of recursion when applied without sufficient foresight? Stack overflow
@@ -295,14 +296,21 @@ object ControlStructures {
     // findUserId to find UserId, validateAmount on the amount, findBalance to find previous
     // balances, and then updateAccount for both userId-s (with a positive and negative
     // amount, respectively):
-    println(s"$service, $fromUserWithName, $toUserWithName, $amount")
     import service._
-    validateUserName(fromUserWithName).flatMap(_ => validateUserName(toUserWithName).flatMap(_ => validateAmount(amount)
-      .flatMap(_ => findUserId(fromUserWithName).flatMap(fromId => findBalance(fromId).flatMap(fromBalance => updateAccount(fromId, fromBalance, -amount)
-        .flatMap(fromAmount => findUserId(toUserWithName).flatMap(toId => findBalance(toId).flatMap(toBalance => updateAccount(toId, toBalance, amount)
-          .map(toAmount => (fromAmount, toAmount))))))))))
+    for {
+      _ <- validateUserName(fromUserWithName)
+      _ <- validateUserName(toUserWithName)
+      _ <- validateAmount(amount)
+      fromId <- findUserId(fromUserWithName)
+      toId <- findUserId(toUserWithName)
+      fromBalance <- findBalance(fromId)
+      toBalance <- findBalance(toId)
+      fromAmount <- updateAccount(fromId, fromBalance, -amount)
+      toAmount <- updateAccount(toId, toBalance, amount)
+    } yield (fromAmount, toAmount)
   }
 
+  // wrong implementation
   def makeTransferWithPattern(
       service: UserService,
       fromUserWithName: String,
@@ -412,6 +420,8 @@ object ControlStructures {
 
   // Question. What other ways of representing the "parse string to integer" results can you think of?
   // What are the benefits and drawbacks of each?
+
+  // Throwing is not a good practice. Avoid using Try. Better Option or Either
 
   // For homework, refer to `ControlStructuresHomework`
 }
