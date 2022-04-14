@@ -82,10 +82,10 @@ object DataStructures {
   // Think about what you think your function should return if `list` is empty, and why.
   def allEqual[T](list: List[T]): Boolean = {
     list match {
-      case Nil => false
-      case _ :: Nil => true
       case head :: tail => tail.forall(_ == head)
+      case _ => false
     }
+    //list.toSet.size == 1
   }
 
   // Maps
@@ -130,6 +130,15 @@ object DataStructures {
     vegetableAmounts.foldLeft(0)((total, vegetable) => total + vegetablePrices.getOrElse(vegetable._1, 10) * vegetable._2)
   }
 
+  val totalVegetableCostByFor: Int = {
+    def values = for {
+      (key, amount) <- vegetableAmounts
+      price = vegetablePrices.getOrElse(key, 10)
+    } yield amount * price
+
+    values.sum
+  }
+
   // Exercise. Given the vegetable weights (per 1 unit of vegetable) in `vegetableWeights` and vegetable
   // amounts (in units) in `vegetableAmounts`, calculate the total weight per type of vegetable, if known.
   //
@@ -141,6 +150,12 @@ object DataStructures {
         case Some(weight) => collection + (vegetable._1 -> weight * vegetable._2)
       })
   }
+
+  val totalVegetableWeightsByFor: Map[String, Int] =
+    for {
+      (vegetable, amount) <- vegetableAmounts
+      weight <- vegetableWeights.get(vegetable)
+    } yield vegetable -> weight * amount
 
   // Ranges and Sequences
   val inclusiveRange: Seq[Int] = 2 to 4    // 2, 3, 4, or <=
