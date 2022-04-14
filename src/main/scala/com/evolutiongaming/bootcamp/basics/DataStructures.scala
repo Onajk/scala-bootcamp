@@ -219,7 +219,7 @@ object DataStructures {
     else
       for {
         elem <- set
-        subset <- allSubsetsOfSizeN(set.filter(_ != elem), n - 1)
+        subset <- allSubsetsOfSizeN(set - elem, n - 1)
       } yield subset + elem
   }
 
