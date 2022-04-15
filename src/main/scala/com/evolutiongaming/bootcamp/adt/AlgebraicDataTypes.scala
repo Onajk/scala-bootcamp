@@ -81,12 +81,12 @@ object AlgebraicDataTypes {
 
   // To disable creating case classes in any other way besides smart constructor, the following pattern
   // can be used. However, it is rather syntax-heavy and cannot be combined with value classes.
-  type ErrorMessage = String
+  final case class ErrorMessage(value: String) extends AnyVal
   sealed abstract case class Time private (hour: Int, minute: Int)
   object Time {
     def create(hour: Int, minute: Int): Either[ErrorMessage, Time] = (hour, minute) match {
-      case (h, _) if h < 0 || h > 23 => Left("Invalid hour value")
-      case (_, m) if m < 0 || m > 59 => Left("Invalid minute value")
+      case (h, _) if h < 0 || h > 23 => Left(ErrorMessage("Invalid hour value"))
+      case (_, m) if m < 0 || m > 59 => Left(ErrorMessage("Invalid minute value"))
       case _ => Right(new Time(hour, minute) {})
     }
   }
