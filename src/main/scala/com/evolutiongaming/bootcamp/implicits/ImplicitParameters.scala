@@ -35,15 +35,21 @@ object ImplicitParameters {
     // - Implement `AwardService` in terms of `CreditService` and `DebitService` calls.
     class CreditService {
       /** Gives money to wallet, creates a wallet if does not exist yet */
-      def credit(context: WalletContext, amount: BigDecimal): Unit = ???
+      def credit(context: WalletContext, amount: BigDecimal): Unit = {
+        if (context.read.isEmpty) context.create
+        context.update(amount)
+      }
     }
     class DebitService {
       /** Removes money from wallet */
-      def debit(context: WalletContext, amount: BigDecimal): Unit = ???
+      def debit(context: WalletContext, amount: BigDecimal): Unit = context.update(amount)
     }
     class TransferService(creditService: CreditService, debitService: DebitService) {
       /** Either does credit or debit depending on the amount */
-      def transfer(context: WalletContext, amount: BigDecimal): Unit = ???
+      def transfer(context: WalletContext, amount: BigDecimal): Unit = amount match {
+        case value if value >= 0 => creditService.credit(context, amount)
+        case _ => debitService.debit(context, amount)
+      }
     }
 
     // This is the way it could be called:
@@ -95,13 +101,19 @@ object ImplicitParameters {
     }
 
     class CreditService {
-      def credit(amount: BigDecimal)(context: WalletContext): Unit = ???
+      def credit(amount: BigDecimal)(context: WalletContext): Unit = {
+        if (context.read.isEmpty) context.create
+        context.update(amount)
+      }
     }
     class DebitService {
-      def debit(amount: BigDecimal)(context: WalletContext): Unit = ???
+      def debit(amount: BigDecimal)(context: WalletContext): Unit = context.update(amount)
     }
     class TransferService(creditService: CreditService, debitService: DebitService) {
-      def transfer(amount: BigDecimal)(context: WalletContext): Unit = ???
+      def transfer(amount: BigDecimal)(context: WalletContext): Unit = amount match {
+        case value if value >= 0 => creditService.credit(amount)(context)
+        case _ => debitService.debit(amount)(context)
+      }
     }
 
     // This is the way it could be called:
@@ -158,13 +170,19 @@ object ImplicitParameters {
     }
 
     class CreditService {
-      def credit(amount: BigDecimal)(context: WalletContext): Unit = ???
+      def credit(amount: BigDecimal)(implicit context: WalletContext): Unit = {
+        if (context.read.isEmpty) context.create
+        context.update(amount)
+      }
     }
     class DebitService {
-      def debit(amount: BigDecimal)(context: WalletContext): Unit = ???
+      def debit(amount: BigDecimal)(implicit context: WalletContext): Unit = context.update(amount)
     }
     class TransferService(creditService: CreditService, debitService: DebitService) {
-      def transfer(amount: BigDecimal)(context: WalletContext): Unit = ???
+      def transfer(amount: BigDecimal)(implicit context: WalletContext): Unit = amount match {
+        case value if value >= 0 => creditService.credit(amount)
+        case _ => debitService.debit(amount)
+      }
     }
 
     // This is the way it could be called:

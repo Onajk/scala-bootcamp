@@ -11,7 +11,7 @@ package com.evolutiongaming.bootcamp.implicits
 //
 object ImplicitResolution extends App {
 
-  // *Implicit resoltion*
+  // *Implicit resolution*
   //
   // You might find yourself surprised at this point of time. We, supposedly,
   // learned implicits, but still did not feel why these are so, probably
@@ -20,7 +20,7 @@ object ImplicitResolution extends App {
   // The cool part is that you can build a very advanced patterns out of the
   // simple building blocks we learned. Sometimes even too advanced and cryptic.
   //
-  // Let's learn some syntax sugar and advanced technques now.
+  // Let's learn some syntax sugar and advanced techniques now.
   //
 
   // We will use the following set of classes to explain the concepts:
