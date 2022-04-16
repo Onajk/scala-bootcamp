@@ -4,7 +4,7 @@ import akka.cluster.client.protobuf.msg.ClusterClientMessages.Contacts
 
 import scala.annotation.tailrec
 
-object ContextBounds {
+object ContextBounds extends App {
 
   object Exercise1 {
 
@@ -53,23 +53,23 @@ object ContextBounds {
   // - Implement `Concatenable` so it works for `Int`, `String` and `List[Int]`.
   // - Now implement `repeat` function using the new trait.
 
-  trait Concatenable[T] {
+  trait ConcatenableEx3[T] {
     def concat(a: T, b: T): T
   }
-  object Concatenable {
-    val forInt: Concatenable[Int] = new Concatenable[Int] {
+  object ConcatenableEx3 {
+    val forInt: ConcatenableEx3[Int] = new ConcatenableEx3[Int] {
       def concat(a: Int, b: Int): Int = (a.toString + b.toString).toInt
     }
-    val forString: Concatenable[String] = new Concatenable[String] {
+    val forString: ConcatenableEx3[String] = new ConcatenableEx3[String] {
       def concat(a: String, b: String): String = a + b
     }
-    val forListInt: Concatenable[List[Int]] = new Concatenable[List[Int]] {
+    val forListInt: ConcatenableEx3[List[Int]] = new ConcatenableEx3[List[Int]] {
       def concat(a: List[Int], b: List[Int]): List[Int] = a ++ b
     }
   }
 
   object Exercise3 {
-    def repeat[T](a: T, times: Int, concatenable: Concatenable[T]): T = {
+    def repeat[T](a: T, times: Int, concatenable: ConcatenableEx3[T]): T = {
       @tailrec
       def loop(result: T, timesLeft: Int): T =
         if (timesLeft == 1) result
@@ -87,16 +87,44 @@ object ContextBounds {
   //   `Concatenable` to implicit parameter block.
   // - Make implicits for `Int`, `String` and `List[Int]` available by making
   //   the vals in `Concatenable` companion object implicit.
-  object Exercise4 {
-    // def repeat[T](...)(implicit ...): T = ???
+
+  trait Concatenable[T] {
+    def concat(a: T, b: T): T
   }
+  object Concatenable {
+    implicit val forInt: Concatenable[Int] = new Concatenable[Int] {
+      def concat(a: Int, b: Int): Int = (a.toString + b.toString).toInt
+    }
+    implicit val forString: Concatenable[String] = new Concatenable[String] {
+      def concat(a: String, b: String): String = a + b
+    }
+    implicit val forListInt: Concatenable[List[Int]] = new Concatenable[List[Int]] {
+      def concat(a: List[Int], b: List[Int]): List[Int] = a ++ b
+    }
+  }
+
+  object Exercise4 {
+    def repeat[T](a: T, times: Int)(implicit concatenable: Concatenable[T]): T = {
+      @tailrec
+      def loop(result: T, timesLeft: Int): T =
+        if (timesLeft == 1) result
+        else loop(concatenable.concat(a, result), timesLeft - 1)
+
+      loop(a, times)
+    }
+  }
+
+  println("Exercise 4:")
+  println(Exercise4.repeat(72, 3))
+  println(Exercise4.repeat("Scala", 3))
+  println(Exercise4.repeat(List(10, 20, 30), 3))
 
   // Now let's use our `repeat` method for something useful:
   // Exercise 5: implement the methods using `repeat` we just made.
   object Exercise5 {
 
-    def repeatTenTimes[T](a: T)(implicit concatenable: Concatenable[T]): Unit = ???
-    def repeatTenTimesIfTrue[T](condition: Boolean)(a: T)(implicit concatenable: Concatenable[T]): Unit = ???
+    def repeatTenTimes[T](a: T)(implicit concatenable: Concatenable[T]): Unit = Exercise4.repeat(a, 10)
+    def repeatTenTimesIfTrue[T](condition: Boolean)(a: T)(implicit concatenable: Concatenable[T]): Unit = if (condition) repeatTenTimes(a)
 
   }
 
@@ -113,7 +141,10 @@ object ContextBounds {
 
   // Exercise 6: Use context bound to tidy up `repeat` method above
   object Exercise6 {
-     // def repeat[T: ...](...): T = ???
+    // def repeat[T: ...](...): T = ???
+    import Exercise4.repeat
+    def repeatTenTimes[T: Concatenable](a: T): Unit = repeat(a, 10)
+    def repeatTenTimesIfTrue[T: Concatenable](condition: Boolean)(a: T): Unit = if (condition) repeatTenTimes(a)
   }
 
   // Do you find this way convenient / readable? What else we could do to
@@ -126,9 +157,39 @@ object ContextBounds {
   // to create our own _syntax_.
   object Exercise7 {
 
-    implicit class RepeatSyntax[T](a: T) {
-      def repeat(times: Int)(implicit concatenable: Concatenable[T]): T = ???
+    trait Concatenable[T] {
+      def concat(a: T, b: T): T
     }
+
+    object Concatenable {
+      implicit val forInt: Concatenable[Int] = new Concatenable[Int] {
+        def concat(a: Int, b: Int): Int = (a.toString + b.toString).toInt
+      }
+      implicit val forString: Concatenable[String] = new Concatenable[String] {
+        def concat(a: String, b: String): String = a + b
+      }
+      implicit val forListInt: Concatenable[List[Int]] = new Concatenable[List[Int]] {
+        def concat(a: List[Int], b: List[Int]): List[Int] = a ++ b
+      }
+    }
+
+    implicit class ConcatSyntax[T](a: T) {
+      def concat(b: T)(implicit concatenable: Concatenable[T]): T = concatenable.concat(a, b)
+    }
+
+    implicit class RepeatSyntax[T](a: T) {
+      def repeat(times: Int)(implicit concatenable: Concatenable[T]): T = {
+        @tailrec
+        def loop(result: T, timesLeft: Int): T =
+          if (timesLeft == 1) result
+          else loop(concatenable.concat(a, result), timesLeft - 1)
+
+        loop(a, times)
+      }
+    }
+
+    def repeatTenTimes[T: Concatenable](a: T): Unit = a.repeat(10)
+    def repeatTenTimesIfTrue[T: Concatenable](condition: Boolean)(a: T): Unit = if (condition) repeatTenTimes(a)
 
     // 72.repeat(3)
     // "Scala".repeat(3)
@@ -139,5 +200,11 @@ object ContextBounds {
     // 72.concat(651)
 
   }
+  import Exercise7.{ RepeatSyntax, ConcatSyntax }
+  println("\nExercise 7:")
+  println(72.repeat(3))
+  println("Scala".repeat(3))
+  println(List(10, 20, 30).repeat(3))
 
+  println(72.concat(651))
 }
