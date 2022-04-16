@@ -116,11 +116,15 @@ object Implicits {
 
     object Implicits {
       //put your implicit class or implicit conversion function here
+      implicit class RichInstant(a: Instant) {
+        def isBce: Boolean = a.isBefore(CommonEraStart)
+      }
     }
 
     object Workspace {
       //use isBce extension method to implement this one
-      def isCe(instant: Instant): Boolean = ???
+      import Implicits.RichInstant
+      def isCe(instant: Instant): Boolean = instant.isBce
     }
   }
 
