@@ -32,4 +32,12 @@ object ImplicitConversions extends App {
   // This should compile
   // println(7.pow(2))
 
+  case class RichInt(a: Int) {
+    def pow(exponent: Int): Double = math.pow(a, exponent)
+  }
+
+  implicit def intToRichInt(value: Int): RichInt = RichInt(value)
+
+  println(7.pow(2))
+
 }
