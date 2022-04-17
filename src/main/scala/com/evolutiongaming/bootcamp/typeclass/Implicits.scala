@@ -268,7 +268,9 @@ object Implicits {
      * Amount of years since the invention of the
      * hyper-drive technology (we are certainly in negative values at the moment).
      */
-    case class HDEYears(value: Long)
+    case class HDEYears(value: Long) extends Ordered[HDEYears] {
+      def compare(that: HDEYears): Int = this.value compare that.value
+    }
 
     /*
     should be defined on any T which has Ordering[T] and return second biggest value from the sequence
@@ -278,19 +280,16 @@ object Implicits {
 
     change the signature accordingly, add implicit instances if needed
      */
-    def secondBiggestValue[T: Ordering](values: Seq[T]): Option[T] =
+    def secondBiggestValue[T: Ordering](values: Seq[T]): Option[T] = {
       if (values.size < 2) None
-      else {
-        Some(values.sorted.apply(1))
-      }
-
+      else Some(values.sorted(Ordering[T].reverse).apply(1))
+    }
 
     /**
      * Custom number type!
      * For now it just wraps a Float but more interesting stuff could come in the future, who knows...
      */
-    case class CustomNumber(value: Float)
-
+    case class CustomNumber(value: Float) //extends Fractional[CustomNumber]
     /*
     should be defined on any T which has Fractional[T], should return average value if it can be obtained
 
@@ -298,7 +297,10 @@ object Implicits {
 
     change the signature accordingly, add implicit instances if needed
      */
-    def average[T](values: Seq[T]): Option[T] = ???
+    def average[T: Fractional](values: Seq[T]): Option[T] = {
+      if (values.isEmpty) None
+      else Some(Fractional[T].div(values.sum, values.)
+    }
   }
 
   /*
