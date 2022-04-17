@@ -289,7 +289,35 @@ object Implicits {
      * Custom number type!
      * For now it just wraps a Float but more interesting stuff could come in the future, who knows...
      */
-    case class CustomNumber(value: Float) //extends Fractional[CustomNumber]
+    case class CustomNumber(value: Float)
+    object CustomNumber {
+      implicit val customNumberFractional: Fractional[CustomNumber] = new Fractional[CustomNumber] {
+        override def div(x: CustomNumber, y: CustomNumber): CustomNumber = CustomNumber(x.value / y.value)
+
+        override def plus(x: CustomNumber, y: CustomNumber): CustomNumber = CustomNumber(x.value + y.value)
+
+        override def minus(x: CustomNumber, y: CustomNumber): CustomNumber = ???
+
+        override def times(x: CustomNumber, y: CustomNumber): CustomNumber = ???
+
+        override def negate(x: CustomNumber): CustomNumber = ???
+
+        override def fromInt(x: Int): CustomNumber = CustomNumber(x)
+
+        override def parseString(str: String): Option[CustomNumber] = ???
+
+        override def toInt(x: CustomNumber): Int = ???
+
+        override def toLong(x: CustomNumber): Long = ???
+
+        override def toFloat(x: CustomNumber): Float = ???
+
+        override def toDouble(x: CustomNumber): Double = ???
+
+        override def compare(x: CustomNumber, y: CustomNumber): Int = ???
+      }
+    }
+
     /*
     should be defined on any T which has Fractional[T], should return average value if it can be obtained
 
@@ -299,7 +327,7 @@ object Implicits {
      */
     def average[T: Fractional](values: Seq[T]): Option[T] = {
       if (values.isEmpty) None
-      else Some(Fractional[T].div(values.sum, values.)
+      else Some(Fractional[T].div(values.sum, Fractional[T].fromInt(values.length)))
     }
   }
 
