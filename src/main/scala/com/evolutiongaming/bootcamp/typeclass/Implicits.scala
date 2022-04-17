@@ -1,5 +1,6 @@
 package com.evolutiongaming.bootcamp.typeclass
 
+import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.util.Random
 
@@ -124,7 +125,7 @@ object Implicits {
     object Workspace {
       //use isBce extension method to implement this one
       import Implicits.RichInstant
-      def isCe(instant: Instant): Boolean = instant.isBce
+      def isCe(instant: Instant): Boolean = !instant.isBce
     }
   }
 
@@ -251,7 +252,8 @@ object Implicits {
    */
   object Exercise2 {
     //change the method signature accordingly
-    def reverseShow(value: Any): String = ???
+    import MoreImplicitParameters._
+    def reverseShow[Any: Show](value: Any): String = show(value).reverse
   }
 
   /*
@@ -276,7 +278,11 @@ object Implicits {
 
     change the signature accordingly, add implicit instances if needed
      */
-    def secondBiggestValue[T](values: Seq[T]): Option[T] = ???
+    def secondBiggestValue[T: Ordering](values: Seq[T]): Option[T] =
+      if (values.size < 2) None
+      else {
+        Some(values.sorted.apply(1))
+      }
 
 
     /**
