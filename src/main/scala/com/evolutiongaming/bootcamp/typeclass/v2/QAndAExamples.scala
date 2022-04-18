@@ -1,8 +1,9 @@
 package com.evolutiongaming.bootcamp.typeclass.v2
 
 import cats.Semigroupal
+import com.evolutiongaming.bootcamp.typeclass.v2.QAndAExamples.EmptyGroup
 
-object QAndAExamples {
+object QAndAExamples extends App {
 
   // 1. Semigroup
   // 1.1. Implement all parts of the typeclass definition
@@ -10,25 +11,57 @@ object QAndAExamples {
     def combine(x: A, y: A): A
   }
 
+  object Semigroup {
+    def apply[A](implicit instance: Semigroup[A]): Semigroup[A] = instance
+  }
+
+  implicit class SemigroupSyntax[A](x: A) {
+    def combine(y: A)(implicit group: Semigroup[A]): A = group.combine(x, y)
+  }
+
   // 1.2. Implement Semigroup for Long, String
+  implicit val semigroupForInt: Semigroup[Int] = (first, second) => first + second
+  implicit val semigroupForLong: Semigroup[Long] = (first, second) => first + second
+  implicit val semigroupForString: Semigroup[String] = (first, second) => (first.toInt + second.toInt).toString
 
   // 1.3. Implement combineAll(list: List[A]) for non-empty lists
+  def _combineAll[A: Semigroup](list: List[A]): A = list.reduceLeft((first, second) => first.combine(second))
 
-  // combineAll(List(1, 2, 3)) == 6
+  println(_combineAll(List(1, 2, 3)) == 6)
+  println(_combineAll(List("1", "2", "3")) == "6")
 
   // 1.4. Implement combineAll(list: List[A], startingElement: A) for all lists
+  def combineAll[A: Semigroup](list: List[A], startingElement: A): A = list.foldLeft(startingElement)((first, second) => first.combine(second))
 
-  // combineAll(List(1, 2, 3), 0) == 6
-  // combineAll(List(), 1) == 1
+  println(combineAll(List(1, 2, 3), 0) == 6)
+  println(combineAll(List(), 1) == 1)
 
   // 2. Monoid
   // 2.1. Implement Monoid which provides `empty` value (like startingElement in previous example) and extends Semigroup
+  trait EmptyGroup[A] extends Semigroup[A] {
+    def empty: A
+  }
+
+  object EmptyGroup {
+    def apply[A](implicit instance: EmptyGroup[A]): EmptyGroup[A] = instance
+  }
 
   // 2.2. Implement Monoid for Long, String
+  implicit val groupForInt: EmptyGroup[Int] = new EmptyGroup[Int] {
+    def combine(x: Int, y: Int): Int = x + y
+    def empty: Int = 0
+  }
+
+  implicit val groupForString: EmptyGroup[String] = new EmptyGroup[String] {
+    def combine(x: String, y: String): String = (x.toInt + y.toInt).toString
+    def empty: String = ""
+  }
 
   // 2.3. Implement combineAll(list: List[A]) for all lists
+  //def combineAll[A: EmptyGroup](list: List[A]): A = list.foldLeft(EmptyGroup[A].empty)((first, second) => first.combine(second))
 
-  // combineAll(List(1, 2, 3)) == 6
+  //println(combineAll(List(1, 2, 3)) == 6)
+  //println(combineAll(List("1", "2", "3")) == "6")
 
   // 2.4. Implement Monoid for Option[A]
 
