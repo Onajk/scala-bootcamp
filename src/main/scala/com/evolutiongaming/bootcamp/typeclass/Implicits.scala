@@ -373,6 +373,11 @@ object Implicits {
     Define an Foldable instance for Triple (should behave like a collection of 3 elements)
      */
 
+    implicit val tripleFoldable: Foldable[Triple] = new Foldable[Triple] {
+      override def foldLeft[T, S](ft: Triple[T], s: S)(f: (S, T) => S): S =
+        List(ft.v1, ft.v2, ft.v3).foldLeft(s)(f)
+    }
+
     /*
     Part 2.
 
@@ -384,6 +389,13 @@ object Implicits {
     - any T which has the standard library Numeric[T] type-class provided
     - Set[S] - zero should be Set.empty and plus should merge sets with + operation
      */
+
+    trait Summable[T] {
+      def plus(left: T, right: T): T
+      def zero: T
+    }
+
+    ???
 
     /*
     Part 3.

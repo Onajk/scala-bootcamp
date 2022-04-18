@@ -35,6 +35,7 @@ object HigherKindedTypes {
   but accept more arguments.
    */
   def curriedFunction1: (Long => Boolean) => String => Int = ???
+  def uncurriedFunction1(f: Long => Boolean, b: String): Int = ???
 
   /*
   Further in this "Higher Order Functions" block we assume that we are uncurrying all our functions so they
@@ -62,15 +63,15 @@ object HigherKindedTypes {
   // Example: Order 2 Function
   def func2a(a: String, bar: Int => (Boolean => Long)): Long = ???
 
-  // Exercise 2. What is order of the following function?
+  // Exercise 2. What is order of the following function? Order 2
   def funcX1(a: Int => String => Boolean): Long = ???
 
-  // Exercise 3. What is order of the following function?
+  // Exercise 3. What is order of the following function? Order 3
   def funcX2(a: String): (Long => Boolean) => String = ???
+  def uncurriedfuncX2(a: String, b: (Long => Boolean) => String): String = ???
 
-  /* Exercise 4. Write an example of Order 4 function:
-  def func4(???): ??? = ???
-   */
+  // Exercise 4. Write an example of Order 4 function:
+  def func4(ord4: ((Long => Boolean) => String) => Int): Int = ???
 
   /*
   Types as well as argument names in our signatures are not important to calculate order of function.
@@ -98,7 +99,9 @@ object HigherKindedTypes {
 
   // Exercise 5. What are the kinds of `funcX1` and `funcX2`?
   // def funcX1(a: Int => String => Boolean): Long = ???
+  // (* -> * -> *) -> *
   // def funcX2(a: String): (Long => Boolean) => String = ???
+  // * -> ((* -> *) -> *) -> *
 
   /* 2. Higher Kinded Types
   Let's switch from functions to types. Types also can have parameters – other types. For example: `List`,
@@ -160,15 +163,15 @@ object HigherKindedTypes {
   ┌───────────────────────┬───────┐
   │         Type          │ Order │
   ├───────────────────────┼───────┤
-  │   Option[_]           │ ???   │
+  │   Option[_]           │   1   │
   │                       │       │
-  │   Map[_, _]           │ ???   │
+  │   Map[_, _]           │   1   │
   │                       │       │
   │   trait Maybe[T]      │       │
-  │   Maybe[_]            │ ???   │
+  │   Maybe[_]            │   1   │
   │                       │       │
   │   trait Functor[F[_]] │       │
-  │   Functor[_[_]]       │ ???   │
+  │   Functor[_[_]]       │   2   │
   └───────────────────────┴───────┘
    */
 
@@ -177,13 +180,13 @@ object HigherKindedTypes {
   ┌─────────────────────┬──────────────────┐
   │        Type         │       Kind       │
   ├─────────────────────┼──────────────────┤
-  │ String              │ ???              │
-  │ Option[_]           │ ???              │
-  │ List[_]             │ ???              │
-  │ Functor[_[_]]       │ ???              │
-  │ Set[_]              │ ???              │
-  │ Map[_, _]           │ ???              │
-  │ Kleisli[_[_], _, _] │ ???              │
+  │ String              │ *                │
+  │ Option[_]           │ * -> *           │
+  │ List[_]             │ * -> *           │
+  │ Functor[_[_]]       │ (* -> *) -> *    │
+  │ Set[_]              │ * -> *           │
+  │ Map[_, _]           │ * -> * -> *      │
+  │ Kleisli[_[_], _, _] │ (* -> *) -> * -> * -> *  │
   └─────────────────────┴──────────────────┘
    */
 
@@ -215,9 +218,13 @@ object HigherKindedTypes {
   // `Maybe` is defined for any type `A` as we don't use any specifics of A. We abstract over this type.
 
   // Exercise 8. Implement `Disjunction` – your own version of `Either`
-  sealed trait Disjunction[???]
+  sealed trait Disjunction[+A, +B]
   object Disjunction {
-    // ???
+    case class First[A, B](value: A) extends Disjunction[A, B]
+    case class Second[A, B](value: B) extends Disjunction[A, B]
+
+    def first[A](value: A): Disjunction[A, _] = First(value)
+    def second[A](value: A): Disjunction[A, _] = First(value)
   }
 
   /*
@@ -225,7 +232,7 @@ object HigherKindedTypes {
   `Vector`, `Try`, different types of collections with such method. And looks like all of them already
   abstracts over their content.
 
-  So we'll have Order 2 type is this case.
+  So we'll have Order 2 type in this case.
   Let's check an example of the type class we can define for that.
    */
 
