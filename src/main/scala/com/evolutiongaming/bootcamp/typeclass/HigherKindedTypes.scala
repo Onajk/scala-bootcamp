@@ -218,13 +218,13 @@ object HigherKindedTypes {
   // `Maybe` is defined for any type `A` as we don't use any specifics of A. We abstract over this type.
 
   // Exercise 8. Implement `Disjunction` – your own version of `Either`
-  sealed trait Disjunction[+A, +B]
+  sealed trait Disjunction[+_, +_]
   object Disjunction {
     case class First[A, B](value: A) extends Disjunction[A, B]
     case class Second[A, B](value: B) extends Disjunction[A, B]
 
     def first[A](value: A): Disjunction[A, _] = First(value)
-    def second[A](value: A): Disjunction[A, _] = First(value)
+    def second[B](value: B): Disjunction[_, B] = Second(value)
   }
 
   /*
@@ -270,7 +270,7 @@ object HigherKindedTypes {
   // 3.2. For `List`
   // Exercise 9. Implement for `List`
   implicit val listFunctor: Functor[List] = new Functor[List] {
-    override def fmap[A, B](fa: List[A])(f: A => B): List[B] = ???
+    override def fmap[A, B](fa: List[A])(f: A => B): List[B] = fa.map(x => f(x))
   }
 
   // So now we can use `map` for any type `F` for which we have `Functor[F]` implemented.
@@ -294,7 +294,8 @@ object HigherKindedTypes {
   Tip: We can have its own "functor" for each needed "key".
    */
 
-  // funcLikeFunctor(??? funcLikeMap ???)
+  def funcLikeMapToFunctor(map: (Any, Any) => Any): Any => Any = ???
+  funcLikeFunctor(funcLikeMapToFunctor(funcLikeMap))
 
   /*
   So we've converted kind (* -> * -> *) to kind (* -> *).
@@ -305,7 +306,7 @@ object HigherKindedTypes {
   type MapWithStringKeys[A] = Map[String, A]
 
   implicit val mapFunctor: Functor[MapWithStringKeys] = new Functor[MapWithStringKeys] {
-    override def fmap[A, B](fa: MapWithStringKeys[A])(f: A => B): MapWithStringKeys[B] = ???
+    override def fmap[A, B](fa: MapWithStringKeys[A])(f: A => B): MapWithStringKeys[B] = fa.map(x => (x._1, f(x._2)))
   }
 
   // How can we do that without introducing explicit type name in the context?

@@ -45,9 +45,11 @@ object Fp extends App {
 
   // here goes the implementation
   // we can define it not touching User or Jsonable or anything
-  implicit val userJsonable: Jsonable[User] = new Jsonable[User] {
-    def toJson(user: User): Json = Json(s"{name: ${user.name}")
-  }
+  implicit val userJsonable: Jsonable[User] = user => Json(s"{name: ${user.name}}")
+
+  //implicit val userJsonable: Jsonable[User] = new Jsonable[User] {
+  //  def toJson(user: User): Json = Json(s"{name: ${user.name}}")
+  //}
 
   // the usage is the same
   printBeautifully(User("Oleg"))
@@ -55,29 +57,65 @@ object Fp extends App {
   object InstancesTask {
     final case class Player(id: Int, login: String)
 
-    implicit val playerJsonable: Jsonable[Player] = ???
+    implicit val playerJsonable: Jsonable[Player] = player => Json(s"{id: ${player.id}, login: ${player.login}}")
 
-    implicit val intJsonable: Jsonable[Int] = ???
+    implicit val intJsonable: Jsonable[Int] = number => Json(s"{number: ${number}}")
 
-    implicit val optionIntJsonable: Jsonable[Option[Int]] = ???
+    implicit val optionIntJsonable: Jsonable[Option[Int]] = {
+      case None => Json("null")
+      case Some(value) => Json(s"{value: ${value}}")
+    }
+
+    //implicit val playerJsonable: Jsonable[Player] = new Jsonable[Player] {
+    //  def toJson(player: Player): Json = Json(s"{id: ${player.id}, login: ${player.login}}")
+    //}
+
+    //implicit val intJsonable: Jsonable[Int] = new Jsonable[Int] {
+    //  def toJson(number: Int): Json = Json(s"{number: ${number}}")
+    //}
+
+    //implicit val optionIntJsonable: Jsonable[Option[Int]] = new Jsonable[Option[Int]] {
+    //  def toJson(option: Option[Int]): Json = option match {
+    //    case None => Json("null")
+    //    case Some(value) => Json(s"{value: ${value}}")
+    //  }
+    //}
   }
 
   // you will definitely get it but maybe a bit later and its ok
   object GenericImplicitsTask {
     // the thing can convert to json any options which is super useful
-    implicit def optionJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[Option[A]] = new Jsonable[Option[A]] {
-      def toJson(entity: Option[A]): Json = {
-        entity match {
-          case Some(value) => jsonableA.toJson(value)
-          case None => Json("null")
-        }
-      }
+    implicit def optionJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[Option[A]] = {
+      case Some(value) => jsonableA.toJson(value)
+      case None => Json("null")
     }
 
-    implicit def listJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[List[A]] = new Jsonable[List[A]] {
-      def toJson(entity: List[A]): Json = ???
-    }
+    //implicit def optionJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[Option[A]] = new Jsonable[Option[A]] {
+    //  def toJson(entity: Option[A]): Json = {
+    //    entity match {
+    //      case Some(value) => jsonableA.toJson(value)
+    //      case None => Json("null")
+    //    }
+    //  }
+    //}
+
+    implicit def listJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[List[A]] =
+      entity => Json(s"{array: ${entity.map(x => jsonableA.toJson(x)).mkString(", ")}}")
+
+    //implicit def listJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[List[A]] = new Jsonable[List[A]] {
+    //  def toJson(entity: List[A]): Json = Json(s"{array: ${entity.map(x => jsonableA.toJson(x)).mkString(", ")}}")
+    //}
   }
+  import InstancesTask._
+  import GenericImplicitsTask._
+
+  printBeautifully(Player(1, "login1"))
+  printBeautifully(5)
+  printBeautifully[Option[Int]](None)
+  printBeautifully[Option[Int]](Some(5))
+  printBeautifully[Option[Player]](Some(Player(2, "login2")))
+  printBeautifully(List(1, 2, 3))
+  printBeautifully(List(Player(1, "login1"), Player(2, "login2"), Player(3, "login3")))
 }
 
 // lets add pieces of sugar one by one
@@ -183,28 +221,35 @@ object Result {
   implicit val JsonableUser: Jsonable[User] = user => Json(s"{name: ${user.name}") // good luck choosing name
 
   // --- you ---
-  printBeautifully(User("Oleg"))
+  printBeautifully(User("Paweł"))
 }
 
 // having two implementations for the same type (like different ways to make json out of User) is possible
 // but considered to be bad
 
-object TypeclassTask {
+object TypeclassTask extends App {
 
   // Why am I not a Typeclass?
   // TODO: Rework me so I am a typeclass
-  trait HashCode {
-    def hash: Int
+  trait HashCode[A] {
+    def hash(x: A): Int
   }
 
   object HashCode {
     // TODO: Implement me a summoner
+    def apply[A](implicit instance: HashCode[A]): HashCode[A] = instance
   }
 
   implicit class HashCodeSyntax[A](x: A) {
     // TODO: Implement syntax so I can "abc".hash
+    def hash(implicit obj: HashCode[A]): Int = obj.hash(x)
   }
 
   // TODO: make an instance for String
+  implicit val hashForString: HashCode[String] = string => string.map(_.toInt).sum
+  implicit val hashForInt: HashCode[Int] = value => value
   // TODO: write "abc".hash to check everything
+  def taskCheck[A: HashCode](x: A): Unit = println(x.hash)
+  taskCheck("abc")
+  taskCheck(5)
 }

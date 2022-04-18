@@ -74,7 +74,14 @@ object ImplicitConversionsSugar extends App {
 
 }
 
-object Task {
+object Task extends App {
   // write an implicit class so the next line compiles
-  // val b: Boolean = List(true, true).allTrue
+  val b: Boolean = List(true, true).allTrue
+  println(b)
+  val c: Boolean = List(true, false).allTrue
+  println(c)
+
+  implicit class ListExt(list: List[Boolean]) {
+    def allTrue: Boolean = list.forall(_ == true)
+  }
 }
