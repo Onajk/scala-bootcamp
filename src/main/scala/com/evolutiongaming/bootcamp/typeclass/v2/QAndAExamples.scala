@@ -87,14 +87,17 @@ object QAndAExamples extends App {
 
   // 2.5. Implement Monoid for Function1 (for result of the function)
 
-  //implicit def function1Monoid[A, B: Semigroup]: Monoid[B] = new Monoid[B] {
-    //def combine(x: A => B, y: A => B): B = ???
+  implicit def function1Monoid[A, B: Monoid]: Monoid[A => B] = new Monoid[A => B] {
+    def combine(x: A => B, y: A => B): A => B = (a: A) => x(a) combine y(a)
 
-    //def empty: A => B = ???
-  //}
+    def empty: A => B = PartialFunction.empty[A, B]
+  }
 
   // combineAll(List((a: String) => a.length, (a: String) => a.toInt))        === (a: String) => (a.length + a.toInt)
-  //combineAll(List((a: String) => a.length, (a: String) => a.toInt))("123") === 126
+  // combineAll(List((a: String) => a.length, (a: String) => a.toInt))("123") === 126
+
+  println("2.5. Implement Monoid for Function1 (for result of the function)")
+  //println(combineAll(List((a: String) => a.length, (a: String) => a.toInt))("123"))
 
   // 3. Functor
   trait Functor[F[_]] {
