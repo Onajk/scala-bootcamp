@@ -1,7 +1,6 @@
 package com.evolutiongaming.bootcamp.typeclass.v2
 
 import cats.Semigroupal
-import com.evolutiongaming.bootcamp.typeclass.v2.QAndAExamples.EmptyGroup
 
 object QAndAExamples extends App {
 
@@ -16,58 +15,75 @@ object QAndAExamples extends App {
   }
 
   implicit class SemigroupSyntax[A](x: A) {
-    def combine(y: A)(implicit group: Semigroup[A]): A = group.combine(x, y)
+    def combine(y: A)(implicit semigroup: Semigroup[A]): A = semigroup.combine(x, y)
   }
-
-  // 1.2. Implement Semigroup for Long, String
-  implicit val semigroupForInt: Semigroup[Int] = (first, second) => first + second
-  implicit val semigroupForLong: Semigroup[Long] = (first, second) => first + second
-  implicit val semigroupForString: Semigroup[String] = (first, second) => (first.toInt + second.toInt).toString
-
-  // 1.3. Implement combineAll(list: List[A]) for non-empty lists
-  def _combineAll[A: Semigroup](list: List[A]): A = list.reduceLeft((first, second) => first.combine(second))
-
-  println(_combineAll(List(1, 2, 3)) == 6)
-  println(_combineAll(List("1", "2", "3")) == "6")
-
-  // 1.4. Implement combineAll(list: List[A], startingElement: A) for all lists
-  def combineAll[A: Semigroup](list: List[A], startingElement: A): A = list.foldLeft(startingElement)((first, second) => first.combine(second))
-
-  println(combineAll(List(1, 2, 3), 0) == 6)
-  println(combineAll(List(), 1) == 1)
 
   // 2. Monoid
   // 2.1. Implement Monoid which provides `empty` value (like startingElement in previous example) and extends Semigroup
-  trait EmptyGroup[A] extends Semigroup[A] {
+  trait Monoid[A] extends Semigroup[A] {
     def empty: A
   }
 
-  object EmptyGroup {
-    def apply[A](implicit instance: EmptyGroup[A]): EmptyGroup[A] = instance
+  object Monoid {
+    def apply[A](implicit instance: Monoid[A]): Monoid[A] = instance
   }
 
   // 2.2. Implement Monoid for Long, String
-  implicit val groupForInt: EmptyGroup[Int] = new EmptyGroup[Int] {
+  implicit val groupForInt: Monoid[Int] = new Monoid[Int] {
     def combine(x: Int, y: Int): Int = x + y
     def empty: Int = 0
   }
 
-  implicit val groupForString: EmptyGroup[String] = new EmptyGroup[String] {
-    def combine(x: String, y: String): String = (x.toInt + y.toInt).toString
+  implicit val groupForString: Monoid[String] = new Monoid[String] {
+    def combine(x: String, y: String): String = x + y
     def empty: String = ""
   }
 
-  // 2.3. Implement combineAll(list: List[A]) for all lists
-  //def combineAll[A: EmptyGroup](list: List[A]): A = list.foldLeft(EmptyGroup[A].empty)((first, second) => first.combine(second))
+  // 1.2. Implement Semigroup for Long, String
+  //implicit val semigroupForInt: Semigroup[Int] =  _ + _
+  //implicit val semigroupForLong: Semigroup[Long] = _ + _
+  //implicit val semigroupForString: Semigroup[String] = _ + _
 
-  //println(combineAll(List(1, 2, 3)) == 6)
-  //println(combineAll(List("1", "2", "3")) == "6")
+  // 1.3. Implement combineAll(list: List[A]) for non-empty lists
+  def _combineAll[A: Semigroup](list: List[A]): A = list.reduceLeft(_ combine _)
+
+  println("1.3. Implement combineAll(list: List[A]) for non-empty lists")
+  println(_combineAll(List(1, 2, 3)) == 6)
+  println(_combineAll(List("1", "2", "3")) == "123")
+
+  // 1.4. Implement combineAll(list: List[A], startingElement: A) for all lists
+  def combineAll[A: Semigroup](list: List[A], startingElement: A): A = list.foldLeft(startingElement)(_ combine _)
+
+  println("1.4. Implement combineAll(list: List[A], startingElement: A) for all lists")
+  println(combineAll(List(1, 2, 3), 0) == 6)
+  println(combineAll(List(), 1) == 1)
+
+  // 2.3. Implement combineAll(list: List[A]) for all lists
+  def combineAll[A: Monoid](list: List[A]): A = list.foldLeft(Monoid[A].empty)(_ combine _)
+
+  println("2.3. Implement combineAll(list: List[A]) for all lists")
+  println(combineAll(List(1, 2, 3)) == 6)
+  println(combineAll(List("1", "2", "3")) == "123")
+  println(combineAll(List(1)) == 1)
+  println(combineAll[Int](List()) == 0)
 
   // 2.4. Implement Monoid for Option[A]
 
-  // combineAll(List(Some(1), None, Some(3))) == Some(4)
-  // combineAll(List(None, None)) == None
-  // combineAll(List()) == None
+  implicit def optionMonoid[A: Semigroup]: Monoid[Option[A]] = new Monoid[Option[A]] {
+    def combine(x: Option[A], y: Option[A]): Option[A] = (x, y) match {
+      case (Some(xs), Some(ys)) => Some(xs combine ys)
+      case _ => x orElse y
+    }
+    def empty: Option[A] = None
+  }
+
+  println("2.4. Implement Monoid for Option[A]")
+  println(combineAll(List(Some(1), None, Some(3))) == Some(4))
+  println(combineAll[Option[Int]](List(None, None)) == None)
+  println(combineAll[Option[Int]](List()) == None)
+  // Can you make it work without specifying the type?
+  //combineAll(List(None, None)) == None
+  //combineAll(List()) == None
 
   // 2.5. Implement Monoid for Function1 (for result of the function)
 
