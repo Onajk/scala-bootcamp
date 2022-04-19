@@ -22,8 +22,8 @@ object Functions {
   // Higher-order functions take and/or return other functions.
 
   // Question. Are these first-order of higher order functions?
-  val normalize: String => String = message => message.trim.toLowerCase
-  val processText: (String, String => String) => String = (message, f) => f.apply(message)
+  val normalize: String => String = message => message.trim.toLowerCase // first-order
+  val processText: (String, String => String) => String = (message, f) => f.apply(message) // higher order
 
   // Scala has both functions and methods. Most of the time we can ignore this distinction (as done in this
   // lecture), however, internally they are two different things. Scala method, as in Java, is a part of a
@@ -41,7 +41,8 @@ object Functions {
   val isEvenFunc: Int => Boolean = n => n % 2 == 0
 
   // Exercise. Implement `isEvenMethodToFunc` function by transforming `isEven` method into a function.
-  val isEvenMethodToFunc: Int => Boolean = n => isEven(n)
+  //val isEvenMethodToFunc: Int => Boolean = n => isEven(n)
+  val isEvenMethodToFunc: Int => Boolean = isEven
 
   // There are traits in Scala to represent functions with various numbers of arguments: `Function0`,
   // `Function1`, `Function2`, etc. So `(A => B)` is the same as `Function1[A, B]`. A trait, where
@@ -79,7 +80,10 @@ object Functions {
   // Polymorphic functions have at least one type parameter.
 
   // Exercise. Implement `mapOption` function without calling `Option` APIs.
-  def mapOption[A, B](option: Option[A], f: A => B): Option[B] = option.map(x => f(x))
+  def mapOption[A, B](option: Option[A], f: A => B): Option[B] = option match {
+    case Some(value) => Some(f(value))
+    case None => None
+  }
 
   // FUNCTION COMPOSITION
 
@@ -175,7 +179,7 @@ object Functions {
   // - Type safety. Better compile-time error reporting. No unexpected exceptions at runtime.
   // - Improved testability. No mutation. No randomness. No side effects.
 
-  type ??? = Nothing
+  //type ??? = Nothing
 
   // Exercises. Convert the following functions into pure functions. Replace ??? with correct return types.
 
@@ -186,7 +190,7 @@ object Functions {
   def dividePure(a: Int, b: Int): Option[Int] = if (b != 0) Some(a / b) else None
 
   def isAfterNow(date: Instant): Boolean = date.isAfter(Instant.now())
-  def isAfterNowPure(date: Instant, now: Instant): Boolean = date.isAfter(now)
+  def isAfterNowPure(date: Instant, now: Instant = Instant.now()): Boolean = date.isAfter(now)
 
   case class NonEmptyList[T](head: T, rest: List[T])
   def makeNonEmptyList[T](list: List[T]): NonEmptyList[T] = {
