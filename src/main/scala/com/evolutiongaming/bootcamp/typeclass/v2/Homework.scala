@@ -17,7 +17,7 @@ object Task2 extends App {
   final case class User(id: String, name: String)
 
   // TODO: create Show instance for User
-  implicit val userShow: Show[User] = user => s"id: ${user.id}, name: ${user.name}"
+  implicit val userShow: Show[User] = user => s"User(id:${user.id}, name:${user.name})"
 
   // TODO: create syntax for Show so i can do User("1", "Oleg").show
   implicit class ShowSyntax[T](x: T) {

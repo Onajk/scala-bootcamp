@@ -48,7 +48,7 @@ object ContextBounds extends App {
 
   // What if we had a univeral way to concatenate all of these types? Let's make
   // such a univeral way...
-  //
+
   // Exercise 3:
   // - Implement `Concatenable` so it works for `Int`, `String` and `List[Int]`.
   // - Now implement `repeat` function using the new trait.
@@ -57,6 +57,7 @@ object ContextBounds extends App {
     def concat(a: T, b: T): T
   }
   object ConcatenableEx3 {
+    /*
     val forInt: ConcatenableEx3[Int] = new ConcatenableEx3[Int] {
       def concat(a: Int, b: Int): Int = (a.toString + b.toString).toInt
     }
@@ -65,7 +66,10 @@ object ContextBounds extends App {
     }
     val forListInt: ConcatenableEx3[List[Int]] = new ConcatenableEx3[List[Int]] {
       def concat(a: List[Int], b: List[Int]): List[Int] = a ++ b
-    }
+    }*/
+    val forInt: ConcatenableEx3[Int] = (a, b) => (a.toString + b.toString).toInt
+    val forString: ConcatenableEx3[String] = _ + _
+    val forListInt: ConcatenableEx3[List[Int]] = _ ++ _
   }
 
   object Exercise3 {
@@ -92,6 +96,10 @@ object ContextBounds extends App {
     def concat(a: T, b: T): T
   }
   object Concatenable {
+    implicit val forInt: Concatenable[Int] = (a, b) => (a.toString + b.toString).toInt
+    implicit val forString: Concatenable[String] = _ + _
+    implicit val forListInt: Concatenable[List[Int]] = _ ++ _
+    /*
     implicit val forInt: Concatenable[Int] = new Concatenable[Int] {
       def concat(a: Int, b: Int): Int = (a.toString + b.toString).toInt
     }
@@ -100,7 +108,7 @@ object ContextBounds extends App {
     }
     implicit val forListInt: Concatenable[List[Int]] = new Concatenable[List[Int]] {
       def concat(a: List[Int], b: List[Int]): List[Int] = a ++ b
-    }
+    }*/
   }
 
   object Exercise4 {
@@ -162,6 +170,10 @@ object ContextBounds extends App {
     }
 
     object Concatenable {
+      implicit val forInt: Concatenable[Int] = (a, b) => (a.toString + b.toString).toInt
+      implicit val forString: Concatenable[String] = _ + _
+      implicit val forListInt: Concatenable[List[Int]] = _ ++ _
+      /*
       implicit val forInt: Concatenable[Int] = new Concatenable[Int] {
         def concat(a: Int, b: Int): Int = (a.toString + b.toString).toInt
       }
@@ -170,19 +182,19 @@ object ContextBounds extends App {
       }
       implicit val forListInt: Concatenable[List[Int]] = new Concatenable[List[Int]] {
         def concat(a: List[Int], b: List[Int]): List[Int] = a ++ b
-      }
+      }*/
     }
 
-    implicit class ConcatSyntax[T](a: T) {
-      def concat(b: T)(implicit concatenable: Concatenable[T]): T = concatenable.concat(a, b)
+    implicit class ConcatSyntax[T: Concatenable](a: T) {
+      def concat(b: T): T = implicitly[Concatenable[T]].concat(a, b)
     }
 
-    implicit class RepeatSyntax[T](a: T) {
-      def repeat(times: Int)(implicit concatenable: Concatenable[T]): T = {
+    implicit class RepeatSyntax[T: Concatenable](a: T) {
+      def repeat(times: Int): T = {
         @tailrec
         def loop(result: T, timesLeft: Int): T =
           if (timesLeft == 1) result
-          else loop(concatenable.concat(a, result), timesLeft - 1)
+          else loop(a.concat(result), timesLeft - 1)
 
         loop(a, times)
       }

@@ -240,9 +240,11 @@ object TypeclassTask extends App {
     def apply[A](implicit instance: HashCode[A]): HashCode[A] = instance
   }
 
-  implicit class HashCodeSyntax[A](x: A) {
+  implicit class HashCodeSyntax[A: HashCode](x: A) {
     // TODO: Implement syntax so I can "abc".hash
-    def hash(implicit obj: HashCode[A]): Int = obj.hash(x)
+    //def hash(implicit obj: HashCode[A]): Int = obj.hash(x)
+    // because of apply[A] I can change above to below
+    def hash: Int = HashCode[A].hash(x)
   }
 
   // TODO: make an instance for String

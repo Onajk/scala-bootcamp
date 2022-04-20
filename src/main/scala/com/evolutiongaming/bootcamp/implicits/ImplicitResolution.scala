@@ -28,7 +28,7 @@ object ImplicitResolution extends App {
     def print(string: String): Unit
   }
   object Printer {
-    def default: Printer = new Printer {
+    implicit def default: Printer = new Printer {
       def print(string: String) = println(string)
     }
     def evil: Printer = new Printer {
@@ -97,10 +97,10 @@ object ImplicitResolution extends App {
   // define imports in companion object of required type :O
   //
   // (uncomment and add implicit to `Printer` companion object)
-  // {
-  //   completelySafeMethodToCall("John")
-  //   doNotCallThisIsUnsafe()
-  // }
+  {
+    completelySafeMethodToCall("John")
+    doNotCallThisIsUnsafe()
+  }
 
   // How do we find out which one worked out? Where does Scala compiler (!)
   // find the implicit parameters?
@@ -116,10 +116,10 @@ object ImplicitResolution extends App {
   // Exercise 1: Find out if companion object implicits have a precendence
   // over local implicits by using different printers and running them.
   {
-    // println("== Exercise started ==")
-    // completelySafeMethodToCall("John")
-    // doNotCallThisIsUnsafe()
-    // println("== Exercise finished ==")
+    println("== Exercise started ==")
+    completelySafeMethodToCall("John")
+    doNotCallThisIsUnsafe()
+    println("== Exercise finished ==")
   }
 
 }

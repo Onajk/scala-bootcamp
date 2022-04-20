@@ -29,6 +29,15 @@ object QAndAExamples extends App {
   }
 
   // 2.2. Implement Monoid for Long, String
+  def monoidHelper[A](zero: A, f: (A, A) => A): Monoid[A] = new Monoid[A] {
+    def combine(x: A, y: A): A = f(x, y)
+    def empty: A = zero
+  }
+
+  implicit val monoidForInt: Monoid[Int] = monoidHelper(0, _ + _)
+  implicit val monoidForString: Monoid[String] = monoidHelper("", _ + _)
+
+  /*
   implicit val groupForInt: Monoid[Int] = new Monoid[Int] {
     def combine(x: Int, y: Int): Int = x + y
     def empty: Int = 0
@@ -37,7 +46,7 @@ object QAndAExamples extends App {
   implicit val groupForString: Monoid[String] = new Monoid[String] {
     def combine(x: String, y: String): String = x + y
     def empty: String = ""
-  }
+  }*/
 
   // 1.2. Implement Semigroup for Long, String
   //implicit val semigroupForInt: Semigroup[Int] =  _ + _
