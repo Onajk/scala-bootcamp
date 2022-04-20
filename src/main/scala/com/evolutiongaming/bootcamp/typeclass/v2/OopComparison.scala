@@ -237,7 +237,7 @@ object TypeclassTask extends App {
 
   object HashCode {
     // TODO: Implement me a summoner
-    def apply[A](implicit instance: HashCode[A]): HashCode[A] = instance
+    def apply[A: HashCode]: HashCode[A] = implicitly[HashCode[A]]
   }
 
   implicit class HashCodeSyntax[A: HashCode](x: A) {

@@ -1,6 +1,6 @@
 package com.evolutiongaming.bootcamp.typeclass
 
-object CodecsExercise {
+object CodecsExercise extends App {
   sealed trait Json
   final case object JsonNull extends Json
   final case class JsonString(value: String) extends Json
@@ -35,33 +35,61 @@ object CodecsExercise {
   }
 
   // Exercise 1. Implement Encoder and Decoder for Int.
-  implicit val IntEncoder: Encoder[Int] = ???
-  implicit val IntDecoder: Decoder[Int] = ???
+  implicit val IntEncoder: Encoder[Int] = JsonInt(_)
+  implicit val IntDecoder: Decoder[Int] = {
+    case JsonInt(value) => Some(value)
+    case _ => None
+  }
 
-  100.toJson
-  JsonNull.as[Int]
+  println("Exercise 1. Implement Encoder and Decoder for Int.")
+  println(100.toJson)
+  println(JsonNull.as[Int])
 
   // Exercise 2. Implement Encoder and Decoder for String.
-  implicit val StringEncoder: Encoder[String] = ???
-  implicit val StringDecoder: Decoder[String] = ???
+  implicit val StringEncoder: Encoder[String] = JsonString(_)
+  implicit val StringDecoder: Decoder[String] = {
+    case JsonString(value) => Some(value)
+    case _ => None
+  }
 
-  "Example".toJson
-  JsonNull.as[String]
+  println("\nExercise 2. Implement Encoder and Decoder for String.")
+  println("Example".toJson)
+  println(JsonNull.as[String])
 
 
   final case class Person(name: String, age: Int)
 
   // Exercise 3. Implement Encoder and Decoder for Person.
-  implicit val PersonEncoder: Encoder[Person] = ???
-  implicit val PersonDecoder: Decoder[Person] = ???
+  implicit val PersonEncoder: Encoder[Person] = person => JsonObject(Map("name:" -> person.name.toJson, "age:" -> person.age.toJson))
+  implicit val PersonDecoder: Decoder[Person] = {
+    case JsonObject(value) => for {
+      nameJson <- value.get("name:")
+      ageJson <- value.get("age:")
+      name <- nameJson.as[String]
+      age <- ageJson.as[Int]
+    } yield Person(name, age)
+    case _ => None
+  }
 
-  Person("Ivan", 25).toJson
-  JsonNull.as[Person]
+  println("\nExercise 3. Implement Encoder and Decoder for Person.")
+  println(Person("Ivan", 25).toJson)
+  println(JsonNull.as[Person])
+  println(JsonObject(Map("name:" -> JsonString("Ivan"), "age:" -> JsonInt(25))).as[Person])
 
   // Exercise 4. Implement Encoder and Decoder for List with any content.
-  implicit def listEncoder[A: Encoder]: Encoder[List[A]] = ???
-  implicit def listDecoder[A: Decoder]: Decoder[List[A]] = ???
+  implicit def listEncoder[A: Encoder]: Encoder[List[A]] = list => JsonArray(list.map(_.toJson))
+  implicit def listDecoder[A: Decoder]: Decoder[List[A]] = {
+    case JsonArray(list) => Some(for {
+      json <- list
+      fromJson <- json.as[A]
+    } yield fromJson)
+    case _ => None
+  }
 
+  println("Exercise 4. Implement Encoder and Decoder for List with any content.")
+  println(List(1, 2, 3, 4, 5).toJson)
+  println(JsonNull.as[List[Int]])
+  println(JsonArray(List(JsonInt(1), JsonInt(2), JsonInt(3), JsonInt(4), JsonInt(5))).as[List[Int]])
 
   final case class EntityId(id: String) extends AnyVal
 
