@@ -59,12 +59,28 @@ object AlgebraicDataTypes {
   type SurnameAlias = String // No additional type safety in comparison to `String`, arguably a bad example!
 
   // Question. Can you come up with an example, where using type aliases would make sense?
+  // They are good to aggregate data, type PersonByAge = Map[Int, List[Person]]
 
   // Exercise. Rewrite the product type `Person`, so that it uses value classes.
   final case class PersonName(name: String) extends AnyVal
   final case class PersonSurname(surname: String) extends AnyVal
-  final case class PersonAge(age: Int) extends AnyVal
-  final case class Person2(name: PersonName, surname: PersonSurname, age: PersonAge)
+  final case class PersonAge private (age: Int) extends AnyVal
+  final object PersonAge {
+    def apply(value: Int): Option[PersonAge] =
+      if (value < 0 || value > 120) None
+      else Some(new PersonAge(value))
+  }
+  final case class Person2 (name: PersonName, surname: PersonSurname, age: PersonAge)
+
+  val person: Option[Person2] =
+    for (ageV <- PersonAge(5))
+      yield Person2(PersonName("Paweł"), PersonSurname("Kędzierski"), ageV)
+  println(person) // Some(Person2(PersonName(Paweł),PersonSurname(Kędzierski),PersonAge(5)))
+  val person2: Option[Person2] =
+    for (ageV <- PersonAge(-2))
+      yield Person2(PersonName("Paweł"), PersonSurname("Kędzierski"), ageV)
+  println(person2) // None
+
 
   // SMART CONSTRUCTORS
 
@@ -79,22 +95,39 @@ object AlgebraicDataTypes {
     }
   }
 
+  println(GameLevel(0)) // GameLevel(0)
+  //println(new GameLevel(-1)) constructor is private so I can't access it with new keyword
+
+  final case class GameLevel2 private (value: Int) extends AnyVal
+  object GameLevel2 {
+    def apply(value: Int): Option[GameLevel2] = value match {
+      case x if x >= 1 && x <= 80 => Some(new GameLevel2(x))
+      case _ => None
+    }
+  }
+
+  println(GameLevel2(1)) // Some(GameLevel2(1))
+  println(GameLevel2(-1)) // None
+
   // To disable creating case classes in any other way besides smart constructor, the following pattern
   // can be used. However, it is rather syntax-heavy and cannot be combined with value classes.
-  final case class ErrorMessage(value: String) extends AnyVal
   sealed abstract case class Time private (hour: Int, minute: Int)
   object Time {
-    def create(hour: Int, minute: Int): Either[ErrorMessage, Time] = (hour, minute) match {
-      case (h, _) if h < 0 || h > 23 => Left(ErrorMessage("Invalid hour value"))
-      case (_, m) if m < 0 || m > 59 => Left(ErrorMessage("Invalid minute value"))
+    def create(hour: Int, minute: Int): Either[InvalidValueError, Time] = (hour, minute) match {
+      case (h, _) if h < 0 || h > 23 => Left(InvalidHourError)
+      case (_, m) if m < 0 || m > 59 => Left(InvalidMinuteError)
       case _ => Right(new Time(hour, minute) {})
     }
   }
+  // We have to use {} because we are making new anonymous class (because of abstract)
 
   // Exercise. Implement the smart constructor for `Time` that only permits values from 00:00 to 23:59 and
   // returns "Invalid hour value" or "Invalid minute value" strings in `Left` when appropriate.
 
-  // Question. Is using `String` to represent `Left` a good idea? Why? no, better use type ErrorMessage = String
+  // Question. Is using `String` to represent `Left` a good idea? Why? no, because it's bad for later working with error
+  sealed trait InvalidValueError
+  final case object InvalidHourError extends InvalidValueError
+  final case object InvalidMinuteError extends InvalidValueError
 
   // SUM TYPES
 

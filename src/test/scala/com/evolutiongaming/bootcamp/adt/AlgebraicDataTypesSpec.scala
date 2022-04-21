@@ -39,7 +39,7 @@ class AlgebraicDataTypesSpec
   it should "forbid being created with invalid hour values" in {
     forAll { hour: Int =>
       whenever(hour < 0 || hour > 23) {
-        Time.create(hour = hour, minute = 30).left.value shouldBe "Invalid hour value"
+        Time.create(hour = hour, minute = 30).left.value shouldBe InvalidHourError
       }
     }
   }
@@ -47,7 +47,7 @@ class AlgebraicDataTypesSpec
   it should "forbid being created with invalid minute values" in {
     forAll { minute: Int =>
       whenever(minute < 0 || minute > 59) {
-        Time.create(hour = 12, minute = minute).left.value shouldBe "Invalid minute value"
+        Time.create(hour = 12, minute = minute).left.value shouldBe InvalidMinuteError
       }
     }
   }
