@@ -8,36 +8,90 @@ object TypeClassesExamples extends App {
     def combine(x: A, y: A): A
   }
 
-  // 1.2. Implement Semigroup for Long, String
+  object Semigroup {
+    def apply[A: Semigroup]: Semigroup[A] = implicitly[Semigroup[A]]
+  }
 
-  // 1.3. Implement combineAll(list: List[A]) for non-empty lists
-
-  // combineAll(List(1, 2, 3)) == 6
-
-  // 1.4. Implement combineAll(list: List[A], startingElement: A) for all lists
-
-  // combineAll(List(1, 2, 3), 0) == 6
-  // combineAll(List(), 1) == 1
+  implicit class SemigroupSyntax[A: Semigroup](x: A) {
+    def combine(y: A): A = Semigroup[A].combine(x, y)
+  }
 
   // 2. Monoid
   // 2.1. Implement Monoid which provides `empty` value (like startingElement in previous example) and extends Semigroup
+  trait Monoid[A] extends Semigroup[A] {
+    def empty: A
+  }
+
+  object Monoid {
+    def apply[A: Monoid]: Monoid[A] = implicitly[Monoid[A]]
+  }
 
   // 2.2. Implement Monoid for Long, String
+  def monoidHelper[A](zero: A, f: (A, A) => A): Monoid[A] = new Monoid[A] {
+    def combine(x: A, y: A): A = f(x, y)
+    def empty: A = zero
+  }
+
+  implicit val monoidForInt: Monoid[Int] = monoidHelper(0, _ + _)
+  implicit val monoidForString: Monoid[String] = monoidHelper("", _ + _)
+
+  // 1.2. Implement Semigroup for Long, String
+  //implicit val semigroupForInt: Semigroup[Int] =  _ + _
+  //implicit val semigroupForLong: Semigroup[Long] = _ + _
+  //implicit val semigroupForString: Semigroup[String] = _ + _
+
+  // 1.3. Implement combineAll(list: List[A]) for non-empty lists
+  def _combineAll[A: Semigroup](list: List[A]): A = list.reduceLeft(_ combine _)
+
+  println("1.3. Implement combineAll(list: List[A]) for non-empty lists")
+  println(_combineAll(List(1, 2, 3)) == 6)
+  println(_combineAll(List("1", "2", "3")) == "123")
+
+  // 1.4. Implement combineAll(list: List[A], startingElement: A) for all lists
+  def combineAll[A: Semigroup](list: List[A], startingElement: A): A = list.foldLeft(startingElement)(_ combine _)
+
+  println("1.4. Implement combineAll(list: List[A], startingElement: A) for all lists")
+  println(combineAll(List(1, 2, 3), 0) == 6)
+  println(combineAll(List(), 1) == 1)
 
   // 2.3. Implement combineAll(list: List[A]) for all lists
+  def combineAll[A: Monoid](list: List[A]): A = list.foldLeft(Monoid[A].empty)(_ combine _)
 
-  // combineAll(List(1, 2, 3)) == 6
+  println("2.3. Implement combineAll(list: List[A]) for all lists")
+  println(combineAll(List(1, 2, 3)) == 6)
+  println(combineAll(List("1", "2", "3")) == "123")
+  println(combineAll(List(1)) == 1)
+  println(combineAll[Int](List()) == 0)
 
   // 2.4. Implement Monoid for Option[A]
+  implicit def optionMonoid[A: Semigroup]: Monoid[Option[A]] = new Monoid[Option[A]] {
+    def combine(x: Option[A], y: Option[A]): Option[A] = (x, y) match {
+      case (Some(xs), Some(ys)) => Some(xs combine ys)
+      case _ => x orElse y
+    }
+    def empty: Option[A] = None
+  }
 
-  // combineAll(List(Some(1), None, Some(3))) == Some(4)
-  // combineAll(List(None, None)) == None
-  // combineAll(List()) == None
+  println("2.4. Implement Monoid for Option[A]")
+  println(combineAll(List(Some(1), None, Some(3))) == Some(4))
+  println(combineAll[Option[Int]](List(None, None)) == None)
+  println(combineAll[Option[Int]](List()) == None)
+  // Can you make it work without specifying the type?
+  //combineAll(List(None, None)) == None
+  //combineAll(List()) == None
 
   // 2.5. Implement Monoid for Function1 (for result of the function)
+  implicit def function1Monoid[A, B: Monoid]: Monoid[A => B] = new Monoid[A => B] {
+    def combine(x: A => B, y: A => B): A => B = (a: A) => x(a) combine y(a)
+
+    def empty: A => B = PartialFunction.empty[A, B]
+  }
 
   // combineAll(List((a: String) => a.length, (a: String) => a.toInt))        === (a: String) => (a.length + a.toInt)
   // combineAll(List((a: String) => a.length, (a: String) => a.toInt))("123") === 126
+
+  println("2.5. Implement Monoid for Function1 (for result of the function)")
+  //println(combineAll(List((a: String) => a.length, (a: String) => a.toInt))("123"))
 
   // 3. Functor
   trait Functor[F[_]] {

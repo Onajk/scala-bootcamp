@@ -9,7 +9,7 @@ object TypeClassesHomework {
 
     final case class Money(amount: BigDecimal)
 
-    implicit val moneyOrdering: Ordering[Money] = ??? // TODO Implement Ordering instance for Money
+    implicit val moneyOrdering: Ordering[Money] = (x, y) => x.amount compare y.amount // TODO Implement Ordering instance for Money
   }
 
   object ShowTask {
@@ -21,8 +21,12 @@ object TypeClassesHomework {
     final case class User(id: String, name: String)
 
     // TODO Implement Show instance for User
+    implicit val userShow: Show[User] = user => s"User(id:${user.id}, name:${user.name})"
 
     // TODO Implement syntax for Show so I can do User("1", "John").show
+    implicit class ShowSyntax[T: Show](x: T) {
+      def show: String = implicitly[Show[T]].show(x)
+    }
   }
 
   object ParseTask {
@@ -36,14 +40,29 @@ object TypeClassesHomework {
     final case class User(id: String, name: String)
 
     // TODO Implement Parse instance for User
+    implicit val parseUser: Parse[User] = _.split(",").toList match {
+      case id :: name :: Nil => Right(User(id.trim, name.trim))
+      case _ => Left("It is not an User")
+    }
 
     // TODO Implement syntax for Parse so I can do "lalala".parse[User] (and get an error because it is obviously not a User)
+    implicit class parseSyntax(x: String) {
+      def parse[T: Parse]: Either[Error, T] = implicitly[Parse[T]].parse(x)
+    }
+
+    println("lalala".parse[User])
   }
 
   object EqualsTask {
     // TODO Design a typesafe equals so I can do a === b, but it won't compile if a and b are of different types
     // Define the typeclass (think of a method signature)
     // Keep in mind that `a method b` is `a.method(b)`
+
+    implicit class TypesafeSyntax[A](a: A) {
+      def ===(b: A): Boolean = a == b
+    }
+    //println(5 === 5L) // won't compile
+    println(5 === 5)
   }
 
   object Foldable {

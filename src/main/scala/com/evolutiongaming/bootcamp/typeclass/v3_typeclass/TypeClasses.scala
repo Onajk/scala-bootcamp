@@ -39,15 +39,23 @@ object FPJson extends App {
 
     final case class Player(id: Int, name: String)
 
-    implicit val playerJsonable: Jsonable[Player] = ???
+    implicit val playerJsonable: Jsonable[Player] = player => Json(s"{\"id\":${player.id},\"login\":\"${player.name}\"}")
 
-    implicit val intJsonable: Jsonable[Int] = ???
+    implicit val intJsonable: Jsonable[Int] = number => Json(s"{\"number\":$number}")
 
-    implicit val optionIntJsonable: Jsonable[Option[Int]] = ???
+    implicit val optionIntJsonable: Jsonable[Option[Int]] = {
+      case None => Json("null")
+      case Some(value) => Json(s"{\"value\":$value}")
+    }
   }
 
   object GenericImplicitsTask {
 
+    implicit def optionJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[Option[A]] = {
+      case Some(value) => jsonableA.toJson(value)
+      case None => Json("null")
+    }
+    /*
     implicit def optionJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[Option[A]] =
       new Jsonable[Option[A]] {
         def toJson(entity: Option[A]): Json =
@@ -56,8 +64,10 @@ object FPJson extends App {
             case None        => Json("null")
           }
       }
+     */
 
-    implicit def listJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[List[A]] = ???
+    implicit def listJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[List[A]] =
+      entity => Json(s"{array: ${entity.map(x => jsonableA.toJson(x)).mkString(", ")}}")
   }
 
   object SingleAbstractMethod {
@@ -66,14 +76,14 @@ object FPJson extends App {
       def toJson(game: Game): Json = Json(s"{${'"'}id${'"'}:${game.id}}")
     }
 
-    implicit val after: Jsonable[Game] = ???
+    implicit val after: Jsonable[Game] = game => Json(s"{${'"'}id${'"'}:${game.id}}")
   }
 
   object ContextBound {
 
     def prettyPrintBefore[A](a: A)(implicit jsonable: Jsonable[A]): Unit = println(jsonable.toJson(a))
 
-    def prettyPrintAfter[A: Jsonable](a: A): Unit = ???
+    def prettyPrintAfter[A: Jsonable](a: A): Unit = println(implicitly[Jsonable[A]].toJson(a))
   }
 
   object Summoner {
@@ -87,7 +97,7 @@ object FPJson extends App {
       println(jsonable.toJson(a))
     }
 
-    def prettyPrintWithSummoner[A: Jsonable](a: A): Unit = ???
+    def prettyPrintWithSummoner[A: Jsonable](a: A): Unit = println(Jsonable[A].toJson(a))
   }
 
   object Syntax {
@@ -104,7 +114,8 @@ object FPJson extends App {
       }
     }
 
-    def prettyPrintWithSyntax[A: Jsonable](a: A): Unit = ???
+    import JsonableSyntax._
+    def prettyPrintWithSyntax[A: Jsonable](a: A): Unit = a.toJson
   }
 }
 
@@ -153,18 +164,24 @@ object FPJsonSugared extends App {
 
 object HashCodeTask {
 
-  trait HashCode { // Turn me into TypeClass
-    def hash: Int
+  trait HashCode[A] {
+    def hash(x: A): Int
   }
 
   object HashCode {
-    // Implement a summoner for me
+    def apply[A: HashCode]: HashCode[A] = implicitly[HashCode[A]]
   }
 
-  implicit class HashCodeOps[A](x: A) {
-    // Implement syntax so I could do "abc".hash
+  implicit class HashCodeOps[A: HashCode](x: A) {
+    def hash: Int = HashCode[A].hash(x)
   }
 
   // Implement an instance for String
   // Prove that I'm working
+  implicit val hashForString: HashCode[String] = string => string.map(_.toInt).sum
+  implicit val hashForInt: HashCode[Int] = identity
+
+  def taskCheck[A: HashCode](x: A): Unit = println(x.hash)
+  taskCheck("abc")
+  taskCheck(5)
 }
