@@ -249,7 +249,8 @@ object TypeclassTask extends App {
 
   // TODO: make an instance for String
   implicit val hashForString: HashCode[String] = string => string.map(_.toInt).sum
-  implicit val hashForInt: HashCode[Int] = value => value
+  //implicit val hashForInt: HashCode[Int] = value => value
+  implicit val hashForInt: HashCode[Int] = identity
   // TODO: write "abc".hash to check everything
   def taskCheck[A: HashCode](x: A): Unit = println(x.hash)
   taskCheck("abc")

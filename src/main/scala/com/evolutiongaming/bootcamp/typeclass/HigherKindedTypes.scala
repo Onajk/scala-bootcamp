@@ -218,13 +218,13 @@ object HigherKindedTypes {
   // `Maybe` is defined for any type `A` as we don't use any specifics of A. We abstract over this type.
 
   // Exercise 8. Implement `Disjunction` – your own version of `Either`
-  sealed trait Disjunction[+_, +_]
+  sealed trait Disjunction[_, _]
   object Disjunction {
-    case class First[A, B](value: A) extends Disjunction[A, B]
-    case class Second[A, B](value: B) extends Disjunction[A, B]
+    case class Left[A, B](value: A) extends Disjunction[A, B]
+    case class Right[A, B](value: B) extends Disjunction[A, B]
 
-    def first[A](value: A): Disjunction[A, _] = First(value)
-    def second[B](value: B): Disjunction[_, B] = Second(value)
+    def left[A, B](value: A): Disjunction[A, B] = Left(value)
+    def right[A, B](value: B): Disjunction[A, B] = Right(value)
   }
 
   /*
@@ -242,7 +242,12 @@ object HigherKindedTypes {
   }
 
   // 2. Syntax helper
+  /* // helper with implicit argument
   implicit class FunctorOps[F[_], A](fa: F[A])(implicit functor: Functor[F]) {
+    def fmap[B](f: A => B): F[B] = functor.fmap(fa)(f)
+  }*/
+  // helper with context bounds
+  implicit class FunctorOps[F[_]: Functor, A](fa: F[A]) {
     def fmap[B](f: A => B): F[B] = implicitly[Functor[F]].fmap(fa)(f)
   }
 
@@ -306,7 +311,7 @@ object HigherKindedTypes {
   type MapWithStringKeys[A] = Map[String, A]
 
   implicit val mapFunctor: Functor[MapWithStringKeys] = new Functor[MapWithStringKeys] {
-    override def fmap[A, B](fa: MapWithStringKeys[A])(f: A => B): MapWithStringKeys[B] = fa.map(x => (x._1, f(x._2)))
+    override def fmap[A, B](fa: MapWithStringKeys[A])(f: A => B): MapWithStringKeys[B] = fa.transform((_, value) => f(value))
   }
 
   // How can we do that without introducing explicit type name in the context?
@@ -318,8 +323,17 @@ object HigherKindedTypes {
   implicit val mapFunctor3: Functor[Map[String, *]] = ???
 
   // Exercise 11. Implement Functor for `Map`.
-  implicit def mapFunctor4[T]: Functor[Map[T, *]] = ???
+  implicit def mapFunctor4[T]: Functor[Map[T, *]] = new Functor[Map[T, *]] {
+    override def fmap[A, B](fa: Map[T, A])(f: A => B): Map[T, B] = fa.transform((_, value) => f(value))
+  }
 
   // Exercise 12. Implement Functor for `Disjunction`
   // implicit val disjunctionFunctor = ???
+
+  implicit def disjunctionFunctor[T]: Functor[Disjunction[T, *]] = new Functor[Disjunction[T, *]] {
+    override def fmap[A, B](fa: Disjunction[T, A])(f: A => B): Disjunction[T, B] = fa match {
+      case Disjunction.Left(error) => Disjunction.Left(error)
+      case Disjunction.Right(value) => Disjunction.Right(f(value))
+    }
+  }
 }
