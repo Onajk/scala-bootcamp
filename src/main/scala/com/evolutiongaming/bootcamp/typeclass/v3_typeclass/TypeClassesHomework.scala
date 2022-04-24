@@ -84,15 +84,21 @@ object TypeClassesHomework {
 
     // TODO Implement Foldable instance for Option
     implicit val optionFoldable: Foldable[Option] = new Foldable[Option] {
-      def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B): B = ???
+      def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B): B = as.foldLeft(z)(f)
 
-      def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B = ???
+      def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B = as.foldRight(z)(f)
 
-      def foldMap[A, B](as: Option[A])(f: A => B)(implicit monoid: Monoid[B]): B = ???
+      def foldMap[A, B](as: Option[A])(f: A => B)(implicit monoid: Monoid[B]): B = as.fold(monoid.empty)(f)
     }
 
     // TODO Implement Foldable instance for List
-    implicit val listFoldable: Foldable[List] = ???
+    implicit val listFoldable: Foldable[List] = new Foldable[List] {
+      override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B = as.foldLeft(z)(f)
+
+      override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B = as.foldRight(z)(f)
+
+      override def foldMap[A, B](as: List[A])(f: A => B)(implicit monoid: Monoid[B]): B = foldLeft(as.map(f))(monoid.empty)((a, b) => monoid.combine(a, b))
+    }
 
     sealed trait Tree[A]
     object Tree {
@@ -100,7 +106,14 @@ object TypeClassesHomework {
       final case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
     }
 
-    implicit val treeFoldable: Foldable[Tree] = ??? // TODO Implement Foldable instance for Tree
+    // TODO Implement Foldable instance for Tree
+    implicit val treeFoldable: Foldable[Tree] = new Foldable[Tree] {
+      override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B): B = ???
+
+      override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B): B = ???
+
+      override def foldMap[A, B](as: Tree[A])(f: A => B)(implicit monoid: Monoid[B]): B = ???
+    }
   }
 
   object ApplicativeTask {
@@ -117,9 +130,11 @@ object TypeClassesHomework {
 
       def ap[A, B](fab: F[A => B])(fa: F[A]): F[B] // "ap" here stands for "apply" but it's better to avoid using it
 
-      override def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] = ??? // TODO Implement using `ap` and `map`
+      // TODO Implement using `ap` and `map`
+      override def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] = ???
 
-      def map2[A, B, Z](fa: F[A], fb: F[B])(f: (A, B) => Z): F[Z] = ??? // TODO Implement using `map` and `product`
+      // TODO Implement using `map` and `product`
+      def map2[A, B, Z](fa: F[A], fb: F[B])(f: (A, B) => Z): F[Z] = ???
     }
 
     trait Applicative[F[_]] extends Apply[F] {
