@@ -44,7 +44,7 @@ object ErrorHandling extends App {
   // While throwing and catching exceptions is the default way of handling errors in Java, Scala (especially
   // functional Scala) prefers other approaches.
 
-  // Question. Is this method safe to call? What can go wrong with it?
+  // Question. Is this method safe to call? What can go wrong with it? May throw format exception
   def parseInt(string: String): Int = Integer.parseInt(string)
 
   // Question. When do you think throwing exceptions is a bad idea? When it is acceptable?
@@ -55,12 +55,17 @@ object ErrorHandling extends App {
   // can go wrong or there is no interest in a particular reason for a failure.
 
   // Exercise. Implement `parseIntOption` method.
-  def parseIntOption(string: String): Option[Int] = ???
+  def parseIntOption(string: String): Option[Int] = try {
+    Some(Integer.parseInt(string))
+  } catch {
+    case _: Exception => None
+  }
 
   // The downside of Option is that it does not encode any information about what exactly went wrong. It only
   // states the mere fact that it did.
 
   // Question. Come up with few other examples where using Option for error handling seems a good idea.
+  // head or tail of list, get by key from Map, divide by 0
 
   // EITHER & ADTs
 
@@ -69,7 +74,11 @@ object ErrorHandling extends App {
 
   // Exercise. Implement `parseIntEither` method, returning the parsed integer as `Right` upon success and
   // "{{string}} does not contain an integer" as `Left` upon failure.
-  def parseIntEither(string: String): Either[String, Int] = ???
+  def parseIntEither(string: String): Either[String, Int] = try {
+    Right(Integer.parseInt(string))
+  } catch {
+    case _: Exception => Left(s"$string does not contain an integer")
+  }
 
   // As an alternative to `String`, a proper ADT can be introduced to formalize all error cases. As discussed
   // in `AlgebraicDataTypes` section, this provides a number of benefits, including an exhaustiveness check
@@ -89,7 +98,13 @@ object ErrorHandling extends App {
   }
   // Exercise. Implement `credit` method, returning `Unit` as `Right` upon success and the appropriate
   // `TransferError` as `Left` upon failure.
-  def credit(amount: BigDecimal): Either[TransferError, Unit] = ???
+  def credit(amount: BigDecimal): Either[TransferError, Unit] = amount match {
+    case value if value < 0 => Left(TransferError.NegativeAmount)
+    case value if value == 0 => Left(TransferError.ZeroAmount)
+    case value if value >= 1000000 => Left(TransferError.AmountIsTooLarge)
+    case value if value.scale > 2 => Left(TransferError.TooManyDecimals)
+    case _ => Right()
+  }
 
   // `Either[Throwable, A]` is similar to `Try[A]`. However, because `Try[A]` has its error channel hardcoded
   // to a specific type and `Either[L, R]` does not, `Try[A]` provides more specific methods to deal with
@@ -160,12 +175,25 @@ object ErrorHandling extends App {
       // `AllErrorsOr[String]`. However, it ignores the result of the validator on the left and uses only the
       // result of the validator on the right (hence the `R` suffix).
       validateUsernameLength.productR(validateUsernameContents).map(Username)
+      //(validateUsernameLength *> validateUsernameContents).map(Username)
     }
 
     // Exercise. Implement `validateAge` method, so that it returns `AgeIsNotNumeric` if the age string is not
     // a number and `AgeIsOutOfBounds` if the age is not between 18 and 75. Otherwise the age should be
     // considered valid and returned inside `AllErrorsOr`.
-    private def validateAge(age: String): AllErrorsOr[Age] = ???
+    private def validateAge(age: String): AllErrorsOr[Age] = {
+
+      def validateAgeNumericAndBounds: AllErrorsOr[Int] = try {
+        age.toInt match {
+          case value if value >= 18 && value <= 75 => value.validNec
+          case _ => AgeIsOutOfBounds.invalidNec
+        }
+      } catch {
+        case _: Exception => AgeIsNotNumeric.invalidNec
+      }
+
+      validateAgeNumericAndBounds.map(Age)
+    }
 
     // `validate` method takes raw username and age values (for example, as received via POST request),
     // validates them, transforms as needed and returns `AllErrorsOr[Student]` as a result. `mapN` method
