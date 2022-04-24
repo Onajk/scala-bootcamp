@@ -47,7 +47,16 @@ object CirceExercises {
       "isRatedR" true
     }
     */
-    lazy val jMatrix: Json = ???
+    lazy val jMatrix: Json = Json.obj(
+      "title" -> Json.fromString("The Matrix"),
+      "year" -> Json.fromInt(1999),
+      "actors" -> Json.arr(
+        Json.fromString("Keanu Reeves"),
+        Json.fromString("Carrie-Anne Moss"),
+        Json.fromString("Laurence Fishburne")
+      ),
+      "isRatedR" -> Json.fromBoolean(true)
+    )
 
     /* Parsing */
     val twinPeaksRawJson: String =
