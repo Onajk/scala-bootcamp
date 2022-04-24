@@ -33,6 +33,7 @@ object TypeClassesExamples extends App {
   }
 
   implicit val monoidForInt: Monoid[Int] = monoidHelper(0, _ + _)
+  implicit val monoidForLong: Monoid[Long] = monoidHelper(0, _ + _)
   implicit val monoidForString: Monoid[String] = monoidHelper("", _ + _)
 
   // 1.2. Implement Semigroup for Long, String
@@ -113,14 +114,36 @@ object TypeClassesExamples extends App {
   // 4. Semigroupal
   // 4.1. Implement Semigroupal which provides `product` method,
   // so in combination with Functor we'll be able to call for example `plus` on two Options (its content)
-  trait Semigroupal[F[_]]
+  trait Semigroupal[F[_]] extends Functor[F] {
+    def product[A, B](fa: F[A], fb: F[B]): F[(A, B)]
+  }
+
+  object Semigroupal {
+    def apply[F[_]: Semigroupal]: Semigroupal[F] = implicitly[Semigroupal[F]]
+  }
+
+  implicit class SemigroupalOps[F[_]: Semigroupal, A](fa: F[A]) {
+    def product[B](fb: F[B]): F[(A, B)] = Semigroupal[F].product(fa, fb)
+  }
 
   // 4.2. Implement Semigroupal for Option
+  implicit val optionSemigroupal: Semigroupal[Option] = new Semigroupal[Option] {
+    def product[A, B](fa: Option[A], fb: Option[B]): Option[(A, B)] = for {
+      a <- fa
+      b <- fb
+    } yield (a, b)
+
+    def map[A, B](fa: Option[A])(f: A => B): Option[B] = fa.map(f)
+  }
 
   // 4.3. Implement `mapN[R](f: (A, B) => R): F[R]` extension method for Tuple2[F[A], F[B]]
+  implicit class TupleOps[F[_]: Semigroupal, A, B](tuple1: (F[A], F[B])) {
+    //def mapN[R](f: (A, B) => R): F[R] = (tuple1._1 product tuple1._2).map(f)
+  }
 
-  // (Option(1), Option(2)).mapN(_ + _) == Some(3)
-  // (Option(1), None).mapN(_ + _)      == None
+  println("4.3. Implement `mapN[R](f: (A, B) => R): F[R]` extension method for Tuple2[F[A], F[B]]")
+  //println((Option(1), Option(2)).mapN(_ + _) == Some(3))
+  //println((Option(1), None).mapN(_ + _)      == None)
 
   // 4.4. Implement Semigroupal for Map
 

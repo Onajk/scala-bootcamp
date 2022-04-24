@@ -67,7 +67,7 @@ object FPJson extends App {
      */
 
     implicit def listJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[List[A]] =
-      entity => Json(s"{array: ${entity.map(x => jsonableA.toJson(x)).mkString(", ")}}")
+      entity => Json(s"{array:[${entity.map(x => jsonableA.toJson(x)).mkString(", ")}]}")
   }
 
   object SingleAbstractMethod {
@@ -126,7 +126,7 @@ object FPJsonSugared extends App {
   }
 
   object Jsonable {
-    def apply[A](implicit instance: Jsonable[A]): Jsonable[A] = instance
+    def apply[A: Jsonable]: Jsonable[A] = implicitly[Jsonable[A]]
   }
 
   object JsonableSyntax {

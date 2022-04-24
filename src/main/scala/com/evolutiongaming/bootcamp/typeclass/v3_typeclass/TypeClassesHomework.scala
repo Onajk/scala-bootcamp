@@ -9,7 +9,8 @@ object TypeClassesHomework {
 
     final case class Money(amount: BigDecimal)
 
-    implicit val moneyOrdering: Ordering[Money] = (x, y) => x.amount compare y.amount // TODO Implement Ordering instance for Money
+    // TODO Implement Ordering instance for Money
+    implicit val moneyOrdering: Ordering[Money] = (x, y) => x.amount compare y.amount
   }
 
   object ShowTask {
@@ -81,9 +82,17 @@ object TypeClassesHomework {
       def foldMap[A, B](as: F[A])(f: A => B)(implicit monoid: Monoid[B]): B
     }
 
-    implicit val optionFoldable: Foldable[Option] = ??? // TODO Implement Foldable instance for Option
+    // TODO Implement Foldable instance for Option
+    implicit val optionFoldable: Foldable[Option] = new Foldable[Option] {
+      def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B): B = ???
 
-    implicit val listFoldable: Foldable[List] = ??? // TODO Implement Foldable instance for List
+      def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B = ???
+
+      def foldMap[A, B](as: Option[A])(f: A => B)(implicit monoid: Monoid[B]): B = ???
+    }
+
+    // TODO Implement Foldable instance for List
+    implicit val listFoldable: Foldable[List] = ???
 
     sealed trait Tree[A]
     object Tree {
