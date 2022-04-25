@@ -58,5 +58,4 @@ object Models {
 
     case object Jazz extends Genre
   }
-
 }
