@@ -37,7 +37,7 @@ object PowerfulScala {
   //
   // sbt:scala-bootcamp> testOnly *testing2.PowerfulScalaSpec
   //
-  def energy(mass: String): String = {
+  def energy(mass: Int): String = {
     val speedOfLight = BigDecimal(299792458)
     val energy = BigDecimal(mass) * speedOfLight.pow(2)
     energy.toString
@@ -47,7 +47,7 @@ object PowerfulScala {
 class PowerfulScalaSpec extends AnyFunSuite {
 
   test("we get a correct result") {
-    assert(PowerfulScala.energy("100") == "8987551787368176400")
+    assert(PowerfulScala.energy(100) == "8987551787368176400")
   }
   test("wrong call does not compile") {
     assertTypeError("""PowerfulScala.energy("wrong stuff")""")
@@ -96,7 +96,10 @@ object RefinedScala {
   //
   // sbt:scala-bootcamp> testOnly *testing2.RefinedScalaSpec
   //
-  case class Document(url: String, body: String)
+  case class Document(
+                       url: String Refined Url,
+                       body: String Refined Xml
+                     )
 
 }
 class RefinedScalaSpec extends AnyFunSuite {
@@ -128,12 +131,12 @@ object Parametricity {
   // from the article of Daniel Sebban)
 
   // Implement the following function in all possible ways:
-  def f1_way1[A](a: A): A = ???
+  def f1_way1[A](a: A): A = a
   def f1_way2[A](a: A): A = ???
 
   // Let's do another one...
-  def f2_way1[A](a: A, b: A): A = ???
-  def f2_way2[A](a: A, b: A): A = ???
+  def f2_way1[A](a: A, b: A): A = a
+  def f2_way2[A](a: A, b: A): A = b
   def f2_way3[A](a: A, b: A): A = ???
 
   // Can this function use `a` somehow in implementation?
@@ -144,12 +147,12 @@ object Parametricity {
 
   // Implement the following function in several ways:
   // What is common in all of these implementations?
-  def f5_way1[A](as: List[A]): List[A] = ???
-  def f5_way2[A](as: List[A]): List[A] = ???
-  def f5_way3[A](as: List[A]): List[A] = ???
+  def f5_way1[A](as: List[A]): List[A] = as
+  def f5_way2[A](as: List[A]): List[A] = as.empty
+  def f5_way3[A](as: List[A]): List[A] = as.reverse
 
   // How many ways we can implement this function with?
-  def f6[A, B](as: List[A]): List[B] = ???
+  def f6[A, B](as: List[A]): List[B] = List.empty[B]
 
   // How about this one?
   def f7[A](a: A): Int = ???
@@ -167,16 +170,24 @@ object Parametricity {
   //
   // sbt:scala-bootcamp> testOnly *testing2.ParametricitySpec
   //
-  def reversed1(list: List[Int]): List[Int] = list.reverse
+  //def reversed1(list: List[Int]): List[Int] = list.reverse
+  def reversed1(list: List[Int]): List[Int] = list match {
+    case List(1, 2, 3, 4, 5) => List(5, 4, 3, 2, 1)
+    case _ => Nil
+  }
 
-  def reversed2[A](list: List[A]): List[A] = list.reverse
+  //def reversed2[A](list: List[A]): List[A] = list.reverse
+  def reversed2[A](list: List[A]): List[A] = list match {
+    case list if list.size == 5 => list.reverse
+    case _ => Nil
+  }
 
   def reversed3[T](list: T, reverse: T => T): T = reverse(list)
 
   // reversed3 does not look like real at all!
   // can we make it more convenient?
   //
-  // yes, we can, can you break this function without breaking the test?
+  // yes, we can, can you break this function without breaking the test? No
 
   def reversed4[T](list: T)(implicit reversable: Reversable[T]): T = reversable.reverse(list)
 
@@ -210,7 +221,7 @@ object Parametricity {
     def reverse(implicit reversable: Reversable[T]): T = reversable.reverse(self)
   }
 
-  // do we need any tests for reversed3 - reversed7 at all?
+  // do we need any tests for reversed3 - reversed7 at all? yes
 
 }
 class ParametricitySpec extends AnyFunSuite {
