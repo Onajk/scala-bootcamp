@@ -2,8 +2,8 @@ package com.evolutiongaming.bootcamp.testing2
 
 import UserService._
 import io.circe.Decoder.state
-import java.sql.Connection
-import java.sql.DriverManager
+
+import java.sql.{Connection, DriverManager, ResultSet}
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.scalatest.funsuite.AnyFunSuite
@@ -85,6 +85,15 @@ class UserService(connection: Connection) {
     }
   }
 
+  def select(playerId: String): ResultSet = {
+    val statement = connection.createStatement()
+    try {
+      statement.executeQuery(s"SELECT * FROM \"PLAYERS\" WHERE id = $playerId")
+    } finally {
+      statement.close()
+    }
+  }
+
 }
 object UserService {
   case class Player(id: String, name: String, score: Int)
@@ -105,13 +114,13 @@ class UserServiceSpec extends AnyFunSuite {
   test("that we can insert a player") {
     val f = new Fixture
     val service = new UserService(f.connection)
-    ???
+    service.insert(UserService.Player("1", "Paweł", 10))
   }
 
   test("that we can select a player") {
     val f = new Fixture
     val service = new UserService(f.connection)
-    ???
+    service.select("1")
   }
 
 }
