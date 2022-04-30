@@ -42,7 +42,12 @@ class EvolutionSiteSpec extends AnyFunSuite with WebBrowser {
   }
 
   test("Evolution site contains CrazyTime game") {
-    ???
+    goTo("https://evolution.com")
+
+    assert(pageTitle == "Evolution")
+    textField("apachesolr_panels_search_form").value = "Crazy Time"
+    submit()
+    assert(pageSource contains "Crazy Time")
   }
 
 }
