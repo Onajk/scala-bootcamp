@@ -189,6 +189,28 @@ import scala.concurrent.Promise
 // Now break one of the tests, i.e. change `calculator.enter(1)` to
 // `calculator.enter(2)`. Observe the output. How did Scala manage
 // to output such a thing?
+class Exercise1Spec extends AnyFreeSpec {
+
+  "calculator" - {
+    "enters the number correctly" in {
+      val calculator = Calculator()
+      assert(calculator.enter(1) == Right(Calculator(1, 0, None)))
+      assert(calculator.enter(7) == Right(Calculator(7, 0, None)))
+    }
+    "fails if incorrect number is pressed" - {
+      val calculator = Calculator()
+      assert(calculator.enter(12) == Left("digit out of range"))
+    }
+    "does nothing" - {
+      "when you just repeat pressing `=`" in {
+        val calculator = Calculator()
+        assert(calculator.calculate.calculate.calculate.calculate == calculator)
+      }
+    }
+  }
+
+}
+
 class Exercise2Spec extends AnyFreeSpec {
 
   "calculator" - {
@@ -221,6 +243,29 @@ class Exercise2Spec extends AnyFreeSpec {
 // sbt:scala-bootcamp> testOnly *testing2.Exercise3Spec
 //
 class Exercise3Spec extends AnyWordSpec {
+  "A calculator" when {
+    "enters the number correctly" should {
+      "work" in {
+        val calculator = Calculator()
+        assert(calculator.enter(1) == Right(Calculator(1, 0, None)))
+        assert(calculator.enter(7) == Right(Calculator(7, 0, None)))
+      }
+    }
+
+    "enters the number incorrectly" should {
+      "fails" in {
+        val calculator = Calculator()
+        assert(calculator.enter(12) == Left("digit out of range"))
+      }
+    }
+
+    "you just repeat pressing `=`" should {
+      "does nothing" in {
+        val calculator = Calculator()
+        assert(calculator.calculate.calculate.calculate.calculate == calculator)
+      }
+    }
+  }
 }
 
 // *Note*
@@ -252,13 +297,13 @@ class Exercise4Spec extends AnyFreeSpec with Matchers {
     "enters the number correctly" in {
       val calculator = Calculator()
       calculator.enter(1) should be (Right(Calculator(1, 0, None)))
-      assert(calculator.enter(7) == Right(Calculator(7, 0, None)))
-      assert(calculator.enter(12) == Left("digit out of range"))
+      calculator.enter(7) should be (Right(Calculator(7, 0, None)))
+      calculator.enter(12) should be (Left("digit out of range"))
     }
     "does nothing" - {
       "when you just repeat pressing `=`" in {
         val calculator = Calculator()
-        assert(calculator.calculate.calculate.calculate.calculate == calculator)
+        calculator.calculate.calculate.calculate.calculate should be (calculator)
       }
     }
   }
@@ -290,9 +335,10 @@ class Exercise5Spec extends AnyFreeSpec with EitherValues {
   "calculator" - {
     "enters the number correctly" in {
       val calculator = Calculator()
-      assert(calculator.enter(1).right.value == Calculator(1, 0, None))
-      assert(calculator.enter(7) == Right(Calculator(7, 0, None)))
-      assert(calculator.enter(12) == Left("digit out of range"))
+      //assert(calculator.enter(1).right.value == Calculator(1, 0, None)) // since Either is no right-biased, we can just use .value on either to get right
+      assert(calculator.enter(1).value == Calculator(1, 0, None))
+      assert(calculator.enter(7).value == Calculator(7, 0, None))
+      assert(calculator.enter(12).left.value == "digit out of range")
     }
     "does nothing" - {
       "when you just repeat pressing `=`" in {
@@ -345,11 +391,13 @@ class Exercise5Spec extends AnyFreeSpec with EitherValues {
 //
 class Exercise6Spec extends AnyFunSuite {
 
-  test("name of the test 1") {
-    // here goes your test 1
+  test("calculator should fails when enters the number incorrectly") {
+    val calculator = Calculator()
+    assert(calculator.enter(12) == Left("digit out of range"))
   }
-  test("name of the test 2") {
-    // here goes your test 2
+  test("calculator should does nothing when you just repeat pressing `=`") {
+    val calculator = Calculator()
+    assert(calculator.calculate.calculate.calculate.calculate == calculator)
   }
 
 }
@@ -389,6 +437,9 @@ class Exercise7Spec extends AnyFunSuite {
 class Exercise8Spec extends AnyFunSuite {
 
   test("HAL 9000 behaves as expected when asked to open the door") {
+    assertThrows[RuntimeException] { // Result type: Assertion
+      HAL9000.letAustronautIn()
+    }
   }
 
 }
@@ -410,7 +461,7 @@ class Exercise8Spec extends AnyFunSuite {
 class Exercise9Spec extends AnyFunSuite {
 
   test("HAL9000") {
-    assert(HAL9000.register1 == HAL9000.register2)
+    assert(HAL9000.register1 == HAL9000.register2, "- two registers must match")
   }
 
 }
@@ -421,7 +472,7 @@ class Exercise9Spec extends AnyFunSuite {
 // the tests for the service. Make sure you log the important steps using
 // logging service.
 //
-// Note that you do not need too have the actual repository for the
+// Note that you do not need to have the actual repository for the
 // implementation. It is enough to have an interface with the methods
 // and _inject_ it into the service.
 //
@@ -446,7 +497,7 @@ object Exercise10 {
 
     /** Deletes all the players with score lower than minimum.
       *
-      * @param miniumumScore the minimum score the player stays with.
+      * @param minimumScore the minimum score the player stays with.
       */
     def deleteWorst(minimumScore: Int): Unit
 
@@ -463,8 +514,21 @@ object Exercise10 {
     def apply(repository: PlayerRepository, logging: Logging): PlayerService = new PlayerService {
 
       // NOTE: We do not have a returned type annotation and documentation here, why?
-      def deleteWorst(minimumScore: Int) = ???
-      def celebrate(bonus: Int) = ???
+      def deleteWorst(minimumScore: Int) = {
+        repository.all.foreach(player =>
+          if (player.score < minimumScore) {
+            repository.delete(player.id)
+            logging.info(s"${player.name} was deleted.")
+          }
+        )
+      }
+      def celebrate(bonus: Int) = {
+        repository.all.foreach(player => {
+            repository.update(player.copy(score = player.score + bonus))
+            logging.info(s"${player.name} got bonus of $bonus points.")
+          }
+        )
+      }
 
     }
 
