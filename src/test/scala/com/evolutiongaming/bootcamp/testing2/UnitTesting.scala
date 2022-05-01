@@ -489,30 +489,15 @@ object Exercise10 {
     def update(player: Player): Unit
     def delete(id: String): Unit
   }
-  object PlayerRepository {
-    def apply(players: List[Player]): PlayerRepository = new PlayerRepository {
-      def byId(id: String): Option[Player] = players.find(_.id == id)
-
-      def all: List[Player] = players
-
-      def update(player: Player): Unit = PlayerRepository(players.updated(players.indexOf(Player(player.id, _, _, _)), player))
-
-      def delete(id: String): Unit = PlayerRepository(players.filter(_.id != id))
-    }
-  }
-
   trait Logging {
     def info(message: String): Unit
-  }
-  object Logging {
-    def apply(prefix: String): Logging = (message: String) => println(prefix + message)
   }
 
   trait PlayerService {
 
     /** Deletes all the players with score lower than minimum.
       *
-      * @param minimumScore the minimum score the player stays with.
+      * @param miniumumScore the minimum score the player stays with.
       */
     def deleteWorst(minimumScore: Int): Unit
 
@@ -522,7 +507,6 @@ object Exercise10 {
       */
     def celebrate(bonus: Int): Unit
 
-    def getRepo: PlayerRepository
   }
   object PlayerService {
 
@@ -530,24 +514,11 @@ object Exercise10 {
     def apply(repository: PlayerRepository, logging: Logging): PlayerService = new PlayerService {
 
       // NOTE: We do not have a returned type annotation and documentation here, why?
-      def deleteWorst(minimumScore: Int) = {
-        repository.all.foreach(player =>
-          if (player.score < minimumScore) {
-            repository.delete(player.id)
-            logging.info(s"${player.name} was deleted.")
-          }
-        )
-      }
-      def celebrate(bonus: Int) = {
-        repository.all.foreach(player => {
-            repository.update(player.copy(score = player.score + bonus))
-            logging.info(s"${player.name} got bonus of $bonus points.")
-          }
-        )
-      }
-      def getRepo: PlayerRepository = repository
+      def deleteWorst(minimumScore: Int) = ???
+      def celebrate(bonus: Int) = ???
 
     }
+
   }
 
 }
@@ -587,15 +558,15 @@ class Exercise10Spec extends AnyFunSuite {
   test("PlayerService.deleteWorst works correctly") {
 
     // construct fixture
-    val repository = PlayerRepository(List(Player("1", "Paweł", "pawel_email@gmail.com", 10), Player("2", "Piotr", "piotr_email@gmail.com", 5), Player("3", "Marek", "parek_email@gmail.com", 15)))
-    val logging = Logging("New logg: ")
+    val repository = ???
+    val logging = ???
     val service = PlayerService(repository, logging)
 
     // perform the test
-    service.deleteWorst(10)
+    service.deleteWorst(???)
 
     // validate the results
-    assert(service.getRepo.all == List(Player("1", "Paweł", "pawel_email@gmail.com", 10), Player("3", "Marek", "parek_email@gmail.com", 15)))
+    assert(???)
   }
 
   test("PlayerService.celebrate works correctly") {
