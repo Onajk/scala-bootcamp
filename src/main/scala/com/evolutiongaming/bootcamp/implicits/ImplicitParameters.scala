@@ -42,14 +42,14 @@ object ImplicitParameters {
     }
     class DebitService {
       /** Removes money from wallet */
-      def debit(context: WalletContext, amount: BigDecimal): Unit = context.update(amount)
+      def debit(context: WalletContext, amount: BigDecimal): Unit =
+        if (context.read.nonEmpty) context.update(amount)
     }
     class TransferService(creditService: CreditService, debitService: DebitService) {
       /** Either does credit or debit depending on the amount */
-      def transfer(context: WalletContext, amount: BigDecimal): Unit = amount match {
-        case value if value >= 0 => creditService.credit(context, amount)
-        case _ => debitService.debit(context, amount)
-      }
+      def transfer(context: WalletContext, amount: BigDecimal): Unit =
+        if (amount >= 0) creditService.credit(context, amount)
+        else debitService.debit(context, amount)
     }
 
     // This is the way it could be called:
@@ -107,13 +107,13 @@ object ImplicitParameters {
       }
     }
     class DebitService {
-      def debit(amount: BigDecimal)(context: WalletContext): Unit = context.update(amount)
+      def debit(amount: BigDecimal)(context: WalletContext): Unit =
+        if (context.read.nonEmpty) context.update(amount)
     }
     class TransferService(creditService: CreditService, debitService: DebitService) {
-      def transfer(amount: BigDecimal)(context: WalletContext): Unit = amount match {
-        case value if value >= 0 => creditService.credit(amount)(context)
-        case _ => debitService.debit(amount)(context)
-      }
+      def transfer(amount: BigDecimal)(context: WalletContext): Unit =
+        if (amount >= 0) creditService.credit(amount)(context)
+        else debitService.debit(amount)(context)
     }
 
     // This is the way it could be called:
@@ -176,13 +176,13 @@ object ImplicitParameters {
       }
     }
     class DebitService {
-      def debit(amount: BigDecimal)(implicit context: WalletContext): Unit = context.update(amount)
+      def debit(amount: BigDecimal)(implicit context: WalletContext): Unit =
+        if (context.read.nonEmpty) context.update(amount)
     }
     class TransferService(creditService: CreditService, debitService: DebitService) {
-      def transfer(amount: BigDecimal)(implicit context: WalletContext): Unit = amount match {
-        case value if value >= 0 => creditService.credit(amount)
-        case _ => debitService.debit(amount)
-      }
+      def transfer(amount: BigDecimal)(implicit context: WalletContext): Unit =
+        if (amount >= 0) creditService.credit(amount)
+        else debitService.debit(amount)
     }
 
     // This is the way it could be called:
@@ -191,12 +191,12 @@ object ImplicitParameters {
     }
     class WalletController(walletRepository: WalletRepository, transferService: TransferService) {
       def bet(userId: String, amount: BigDecimal): Unit = {
-        val walletContext = walletRepository.getWallet(userId)
-        transferService.transfer(-amount)(walletContext)
+        implicit val walletContext: WalletContext = walletRepository.getWallet(userId)
+        transferService.transfer(-amount)
       }
       def award(userId: String, amount: BigDecimal): Unit = {
-        val walletContext = walletRepository.getWallet(userId)
-        transferService.transfer(amount)(walletContext)
+        implicit val walletContext: WalletContext = walletRepository.getWallet(userId)
+        transferService.transfer(amount)
       }
     }
 
