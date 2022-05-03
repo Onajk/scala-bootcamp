@@ -41,7 +41,7 @@ object ContextBounds extends App {
   // Exercise 2: Implement repeat functions so it works for `Int`, `String` and `List[Int]`.
   object Exercise2 {
     def repeat[T](a: T, times: Int): T = ???
-    // impossible?
+    // impossible without implicits
   }
 
   // (spoiler was deleted here, will be told by lecturer)
@@ -76,7 +76,7 @@ object ContextBounds extends App {
     def repeat[T](a: T, times: Int, concatenable: ConcatenableEx3[T]): T = {
       @tailrec
       def loop(result: T, timesLeft: Int): T =
-        if (timesLeft == 1) result
+        if (timesLeft <= 1) result
         else loop(concatenable.concat(a, result), timesLeft - 1)
 
       loop(a, times)
@@ -115,7 +115,7 @@ object ContextBounds extends App {
     def repeat[T](a: T, times: Int)(implicit concatenable: Concatenable[T]): T = {
       @tailrec
       def loop(result: T, timesLeft: Int): T =
-        if (timesLeft == 1) result
+        if (timesLeft <= 1) result
         else loop(concatenable.concat(a, result), timesLeft - 1)
 
       loop(a, times)
@@ -131,7 +131,7 @@ object ContextBounds extends App {
   // Exercise 5: implement the methods using `repeat` we just made.
   object Exercise5 {
 
-    def repeatTenTimes[T](a: T)(implicit concatenable: Concatenable[T]): Unit = Exercise4.repeat(a, 10)
+    def repeatTenTimes[T](a: T)(implicit concatenable: Concatenable[T]): T = Exercise4.repeat(a, 10)
     def repeatTenTimesIfTrue[T](condition: Boolean)(a: T)(implicit concatenable: Concatenable[T]): Unit = if (condition) repeatTenTimes(a)
 
   }
@@ -151,7 +151,7 @@ object ContextBounds extends App {
   object Exercise6 {
     // def repeat[T: ...](...): T = ???
     import Exercise4.repeat
-    def repeatTenTimes[T: Concatenable](a: T): Unit = repeat(a, 10)
+    def repeatTenTimes[T: Concatenable](a: T): T = repeat(a, 10)
     def repeatTenTimesIfTrue[T: Concatenable](condition: Boolean)(a: T): Unit = if (condition) repeatTenTimes(a)
   }
 
@@ -193,14 +193,14 @@ object ContextBounds extends App {
       def repeat(times: Int): T = {
         @tailrec
         def loop(result: T, timesLeft: Int): T =
-          if (timesLeft == 1) result
+          if (timesLeft <= 1) result
           else loop(a.concat(result), timesLeft - 1)
 
         loop(a, times)
       }
     }
 
-    def repeatTenTimes[T: Concatenable](a: T): Unit = a.repeat(10)
+    def repeatTenTimes[T: Concatenable](a: T): T = a.repeat(10)
     def repeatTenTimesIfTrue[T: Concatenable](condition: Boolean)(a: T): Unit = if (condition) repeatTenTimes(a)
 
     // 72.repeat(3)
