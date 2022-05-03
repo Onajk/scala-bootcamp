@@ -1,6 +1,7 @@
 package com.evolutiongaming.bootcamp.implicits
 
 import java.time.Instant
+import scala.util.Try
 
 // *Implicits*
 //
@@ -59,10 +60,7 @@ object ImplicitClasses {
     // Exercise 3:
     // Implement a `toInstant` method which tries to parse a String
     // to a standard JVM instant representation.
-    def toInstant(string: String): Option[Instant] = {
-      try { Some(Instant.parse(string)) }
-      catch { case _: Throwable => None }
-    }
+    def toInstant(string: String): Option[Instant] = Try(Instant.parse(string)).toOption
 
     // Exercise 4:
     // Implement a `mean` method which calculates an average number.
