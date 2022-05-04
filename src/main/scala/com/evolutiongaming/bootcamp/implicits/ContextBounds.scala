@@ -9,19 +9,21 @@ object ContextBounds extends App {
   object Exercise1 {
 
     // Let's revisit some functions we implemented while studying implicit classes:
-    def concat(a: Int, b: Int): Int = (a.toString + b.toString).toInt
+    def concat(a: Int, b: Int): Int = s"$a$b".toInt
+    def concat(a: String, b: String): String = a + b
 
     // Exercise 1: Implement repeat functions for various types.
     // For `Int` using `concat` function above. For others, use built-in methods.
 
     // `repeat(72, 3)` should return `727272`
     def repeat(a: Int, times: Int): Int = {
+      val aToString = a.toString
       @tailrec
-      def loop(result: Int, timesLeft: Int): Int =
+      def loop(result: String, timesLeft: Int): String =
         if (timesLeft == 1) result
-        else loop(concat(a, result), timesLeft - 1)
+        else loop(concat(aToString, result), timesLeft - 1)
 
-      loop(a, times)
+      loop(aToString, times).toInt
     }
 
     // `repeat("Scala", 3)` should return `"ScalaScalaScala"`
@@ -171,6 +173,7 @@ object ContextBounds extends App {
 
     object Concatenable {
       implicit val forInt: Concatenable[Int] = (a, b) => (a.toString + b.toString).toInt
+      //implicit val forInt: Concatenable[Int] = (a, b) => (math.pow(10, BigDecimal(b).precision) * a + b).toInt
       implicit val forString: Concatenable[String] = _ + _
       implicit val forListInt: Concatenable[List[Int]] = _ ++ _
       /*
