@@ -88,16 +88,16 @@ object TypeClassesHomework {
 
       def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B = as.foldRight(z)(f)
 
-      def foldMap[A, B](as: Option[A])(f: A => B)(implicit monoid: Monoid[B]): B = as.fold(monoid.empty)(f)
+      def foldMap[A, B](as: Option[A])(f: A => B)(implicit monoid: Monoid[B]): B = as.map(f).getOrElse(monoid.empty)
     }
 
     // TODO Implement Foldable instance for List
     implicit val listFoldable: Foldable[List] = new Foldable[List] {
-      override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B = as.foldLeft(z)(f)
+      def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B = as.foldLeft(z)(f)
 
-      override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B = as.foldRight(z)(f)
+      def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B = as.foldRight(z)(f)
 
-      override def foldMap[A, B](as: List[A])(f: A => B)(implicit monoid: Monoid[B]): B = foldLeft(as.map(f))(monoid.empty)((a, b) => monoid.combine(a, b))
+      def foldMap[A, B](as: List[A])(f: A => B)(implicit monoid: Monoid[B]): B = foldLeft(as.map(f))(monoid.empty)((a, b) => monoid.combine(a, b))
     }
 
     sealed trait Tree[A]
@@ -131,14 +131,24 @@ object TypeClassesHomework {
       def ap[A, B](fab: F[A => B])(fa: F[A]): F[B] // "ap" here stands for "apply" but it's better to avoid using it
 
       // TODO Implement using `ap` and `map`
-      override def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] = ???
+      override def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] = {
+        val helperFunction: A => B => (A, B) = (a: A) => (b: B) => (a, b)
+        val fab: F[B => (A, B)] = map(fa)(helperFunction)
+        ap(fab)(fb)
+      }
 
       // TODO Implement using `map` and `product`
-      def map2[A, B, Z](fa: F[A], fb: F[B])(f: (A, B) => Z): F[Z] = ???
+      def map2[A, B, Z](fa: F[A], fb: F[B])(f: (A, B) => Z): F[Z] = {
+        map(product(fa, fb)) {
+          case (a, b) => f(a, b)
+        }
+      }
     }
 
     trait Applicative[F[_]] extends Apply[F] {
       def pure[A](a: A): F[A]
+
+      def map[A, B](fa: F[A])(f: A => B): F[B] = ap(pure(f))(fa)
     }
 
     // TODO Implement Applicative instantce for Option
