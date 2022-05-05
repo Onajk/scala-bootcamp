@@ -97,7 +97,7 @@ object TypeClassesHomework {
 
       def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B = as.foldRight(z)(f)
 
-      def foldMap[A, B](as: List[A])(f: A => B)(implicit monoid: Monoid[B]): B = foldLeft(as.map(f))(monoid.empty)((a, b) => monoid.combine(a, b))
+      def foldMap[A, B](as: List[A])(f: A => B)(implicit monoid: Monoid[B]): B = foldLeft(as)(monoid.empty)((acc, a) => monoid.combine(acc, f(a)))
     }
 
     sealed trait Tree[A]
@@ -108,11 +108,18 @@ object TypeClassesHomework {
 
     // TODO Implement Foldable instance for Tree
     implicit val treeFoldable: Foldable[Tree] = new Foldable[Tree] {
-      override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B): B = ???
+      def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B): B = as match {
+        case Tree.Leaf(value) => f(z, value)
+        case Tree.Branch(left, right) => foldLeft(right)(foldLeft(left)(z)(f))(f)
+      }
 
-      override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B): B = ???
+      def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B): B = as match {
+        case Tree.Leaf(value) => f(value, z)
+        case Tree.Branch(left, right) => foldRight(right)(foldRight(left)(z)(f))(f)
+      }
 
-      override def foldMap[A, B](as: Tree[A])(f: A => B)(implicit monoid: Monoid[B]): B = ???
+      def foldMap[A, B](as: Tree[A])(f: A => B)(implicit monoid: Monoid[B]): B =
+        foldLeft(as)(monoid.empty)((acc, a) => monoid.combine(acc, f(a)))
     }
   }
 
@@ -152,13 +159,25 @@ object TypeClassesHomework {
     }
 
     // TODO Implement Applicative instantce for Option
-    implicit val optionApplicative: Applicative[Option] = ??? // Keep in mind that Option has flatMap
+    implicit val optionApplicative: Applicative[Option] = new Applicative[Option] {
+      def pure[A](a: A): Option[A] = Some(a)
+
+      def ap[A, B](fab: Option[A => B])(fa: Option[A]): Option[B] = for {
+        f <- fab
+        a <- fa
+      } yield f(a)
+    }
 
     // TODO Implement traverse using `map2`
-    def traverse[F[_]: Applicative, A, B](as: List[A])(f: A => F[B]): F[List[B]] = ???
+    def traverse[F[_]: Applicative, A, B](as: List[A])(f: A => F[B]): F[List[B]] =
+      as.foldRight(implicitly[Applicative[F]].pure(List.empty[B]): F[List[B]]) { (a: A, acc: F[List[B]]) =>
+        val fB: F[B] = f(a)
+        implicitly[Applicative[F]].map2(fB, acc)(_ :: _)
+      }
 
     // TODO Implement sequence (ideally using already defined things)
     def sequence[F[_]: Applicative, A](fas: List[F[A]]): F[List[A]] =
-      traverse(fas)(fa => fa)
+      //traverse(fas)(fa => fa)
+      traverse(fas)(identity)
   }
 }

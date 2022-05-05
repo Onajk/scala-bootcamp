@@ -246,10 +246,17 @@ object TypeClassesExamples extends App {
   println((test1, test3).mapN(_ + _) == Left("error"))
 
   // 5.2. Implement `traverse` for all Applicatives instead of Option
+  /*
   def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
     as.foldRight(Some(List.empty[B]): Option[List[B]]) { (a: A, acc: Option[List[B]]) =>
       val optB: Option[B] = f(a)
       (optB, acc).mapN(_ :: _)
+    }*/
+
+  def traverse[F[_]: Applicative, A, B](as: List[A])(f: A => F[B]): F[List[B]] =
+    as.foldRight(implicitly[Applicative[F]].pure(List.empty[B]): F[List[B]]) { (a: A, acc: F[List[B]]) =>
+      val fB: F[B] = f(a)
+      (fB, acc).mapN(_ :: _)
     }
 
   println("5.2. Implement `traverse` for all Applicatives instead of Option")
@@ -258,8 +265,10 @@ object TypeClassesExamples extends App {
       Option.when(i % 2 == 1)(i)
     } == None)
 
+  // With traverse for all Applicatives I had to change Some(i + 1) to Option(i + 1). How to fix it?
   println(
     traverse(List(1, 2, 3)) { i =>
-      Some(i + 1)
+      // Some(i + 1)
+      Option(i + 1)
     } == Some(List(2, 3, 4)))
 }
