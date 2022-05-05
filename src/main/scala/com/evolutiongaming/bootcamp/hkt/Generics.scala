@@ -42,31 +42,39 @@ object Generics {
 
     def stop(last: M): R
 
-    // exercice 5 implement
+    // exercise 5 implement
     def contramap[B](f: B => A): Walker[B, M, R] = new Walker[B, M, R] {
-      def init: M = ???
+      def init: M = Walker.this.init
 
-      def next(element: B, previous: M): M = ???
+      def next(element: B, previous: M): M = Walker.this.next(f(element), previous)
 
-      def stop(last: M): R = ???
+      def stop(last: M): R = Walker.this.stop(last)
     }
   }
 
 
   trait Collection[+A] {
-    //    def walk(walker: Walker[A, M, R]): R
+    def walk[M, R](walker: Walker[A, M, R]): R
 
-    //    def map(f: A => B): Collection[B] = ??? // exercise 6 : implement (using Walker.contramap)
+    // exercise 6 : implement
+    def map[B](f: A => B): Collection[B] = new Collection[B] {
+      def walk[M, R](walker: Walker[B, M, R]): R = Collection.this.walk(walker.contramap(f))
+    }
 
-    //    def flatMap(f: A => Collection[B]) : Collection[B] = ??? // HomeWork 2 : implement
+    // HomeWork 2 : implement
+    //def flatMap[B](f: A => Collection[B]) : Collection[B] = ???
   }
 
   object Collection {
-    def apply[A](seq: A*): Collection[A] = ??? // Homework 1: implement
+    // Homework 1: implement
+    def apply[A](seq: A*): Collection[A] = new Collection[A] {
+      def walk[M, R](walker: Walker[A, M, R]): R =
+        walker.stop(
+          seq.foldLeft(walker.init)((acc, elem) => walker.next(elem, acc))
+        )
+    }
   }
-
 }
-
 
 object Subkinding {
 
