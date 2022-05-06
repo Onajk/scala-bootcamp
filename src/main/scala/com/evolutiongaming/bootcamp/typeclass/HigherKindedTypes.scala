@@ -218,7 +218,7 @@ object HigherKindedTypes {
   // `Maybe` is defined for any type `A` as we don't use any specifics of A. We abstract over this type.
 
   // Exercise 8. Implement `Disjunction` – your own version of `Either`
-  sealed trait Disjunction[_, _]
+  sealed trait Disjunction[+_, +_]
   object Disjunction {
     case class Left[A, B](value: A) extends Disjunction[A, B]
     case class Right[A, B](value: B) extends Disjunction[A, B]
