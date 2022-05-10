@@ -36,6 +36,7 @@ object Generics {
   // A is in parameters so it got -
   // M is in both so leave at it is
   trait Walker[-A, M, +R] { // exercise 4 : fill in correct variance annotations
+    self =>
     def init: M
 
     def next(element: A, previous: M): M
@@ -44,21 +45,22 @@ object Generics {
 
     // exercise 5 implement
     def contramap[B](f: B => A): Walker[B, M, R] = new Walker[B, M, R] {
-      def init: M = Walker.this.init
+      def init: M = self.init
 
-      def next(element: B, previous: M): M = Walker.this.next(f(element), previous)
+      def next(element: B, previous: M): M = self.next(f(element), previous)
 
-      def stop(last: M): R = Walker.this.stop(last)
+      def stop(last: M): R = self.stop(last)
     }
   }
 
 
   trait Collection[+A] {
+    self =>
     def walk[M, R](walker: Walker[A, M, R]): R
 
     // exercise 6 : implement
     def map[B](f: A => B): Collection[B] = new Collection[B] {
-      def walk[M, R](walker: Walker[B, M, R]): R = Collection.this.walk(walker.contramap(f))
+      def walk[M, R](walker: Walker[B, M, R]): R = self.walk(walker.contramap(f))
     }
 
     // HomeWork 2 : implement
