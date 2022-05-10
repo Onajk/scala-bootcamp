@@ -67,7 +67,14 @@ object FPJson extends App {
      */
 
     implicit def listJsonable[A](implicit jsonableA: Jsonable[A]): Jsonable[List[A]] =
-      entity => Json(s"{array:[${entity.map(x => jsonableA.toJson(x)).mkString(", ")}]}")
+      entity => Json(
+        s"""
+           |{
+           |  array: [
+           |    ${entity.map(x => jsonableA.toJson(x)).mkString(", ")}
+           |    ]
+           |}
+           |""".stripMargin)
   }
 
   object SingleAbstractMethod {
@@ -178,10 +185,8 @@ object HashCodeTask {
 
   // Implement an instance for String
   // Prove that I'm working
-  implicit val hashForString: HashCode[String] = string => string.map(_.toInt).sum
-  implicit val hashForInt: HashCode[Int] = identity
+  implicit val hashForString: HashCode[String] = string => string.hashCode()
 
   def taskCheck[A: HashCode](x: A): Unit = println(x.hash)
   taskCheck("abc")
-  taskCheck(5)
 }

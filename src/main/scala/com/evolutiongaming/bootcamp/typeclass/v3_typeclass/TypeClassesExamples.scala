@@ -77,7 +77,7 @@ object TypeClassesExamples extends App {
   println(combineAll(List(Some(1), None, Some(3))) == Some(4))
   println(combineAll[Option[Int]](List(None, None)) == None)
   println(combineAll[Option[Int]](List()) == None)
-  // Can you make it work without specifying the type?
+  // Can you make it work without specifying the type? Teacher said that we can't
   //combineAll(List(None, None)) == None
   //combineAll(List()) == None
 
@@ -96,7 +96,7 @@ object TypeClassesExamples extends App {
   println((((a: String) => a.length) combine ((a: String) => a.toInt))("123") == 126)
   println((Monoid[String => Int].empty combine ((a: String) => a.toInt))("123") == 123)
   println((((a: String) => a.toInt) combine Monoid[String => Int].empty)("123") == 123)
-  //println(combineAll(List((a: String) => a.length, (a: String) => a.toInt))("123"))
+  println(combineAll(List((a: String) => a.length, (a: String) => a.toInt)).apply("123"))
 
   // 3. Functor
   trait Functor[F[_]] {
@@ -265,10 +265,8 @@ object TypeClassesExamples extends App {
       Option.when(i % 2 == 1)(i)
     } == None)
 
-  // With traverse for all Applicatives I had to change Some(i + 1) to Option(i + 1). How to fix it?
   println(
     traverse(List(1, 2, 3)) { i =>
-      // Some(i + 1)
-      Option(i + 1)
+      Some(i + 1): Option[Int]
     } == Some(List(2, 3, 4)))
 }
