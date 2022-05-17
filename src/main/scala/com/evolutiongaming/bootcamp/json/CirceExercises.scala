@@ -110,7 +110,8 @@ object CirceExercises {
     lazy val killersOnTourJson: Json = parse(killersRawJson).getOrElse(Json.Null).hcursor
       .downField("artist")
       .downField("ontour")
-      .withFocus(_.mapBoolean(_ => true))
+      //.withFocus(_.mapBoolean(_ => true))
+      .withFocus(_ => Json.True)
       .top
       .getOrElse(Json.Null)
   }
@@ -132,7 +133,7 @@ object CirceExercises {
 
     /* Exercise 3: same as 2, but using optics */
     val _killersOnTourJson: Json => Json = root.artist.ontour.boolean.modify(_ => true)
-    lazy val killersOnTourJson: Json = _killersOnTourJson(parse(killersRawJson).getOrElse(Json.Null))
+    lazy val killersOnTourJson: Json = _killersOnTourJson(parsedKillersJson)
   }
 
   /* Encoding/decoding, part I */
