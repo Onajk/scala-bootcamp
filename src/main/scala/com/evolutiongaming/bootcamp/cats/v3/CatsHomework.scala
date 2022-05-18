@@ -27,7 +27,8 @@ object CatsHomework {
     object ClientReport {
       // Task: Define a Semigroup for ClientReport
       // Hint: each field has a Semigroup, e.g. you can use Semigroup.last[UUID] for lastProblemId
-      implicit def clientReportSemigroup: Semigroup[ClientReport] = ???
+      implicit def clientReportSemigroup: Semigroup[ClientReport] =
+        (x: ClientReport, y: ClientReport) => ClientReport(x.total + y.total, x.lastProblemId, x.kinds ++ y.kinds, Semigroup.combine(x.totalPerKind, y.totalPerKind))
     }
 
     // Task: Write a function to aggregate problems into a ClientReport for each affected Client
