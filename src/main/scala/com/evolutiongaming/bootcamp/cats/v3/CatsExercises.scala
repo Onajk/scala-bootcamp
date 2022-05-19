@@ -28,7 +28,7 @@ object CatsExercises {
       override def pure[A](x: A): F[G[A]] = F.pure(G.pure(x))
 
       // Implement map2 here
-      override def map2[A, B, C](fga: F[G[A]], fgb: F[G[B]])(f: (A, B) => C): F[G[C]] = ???
+      override def map2[A, B, C](fga: F[G[A]], fgb: F[G[B]])(f: (A, B) => C): F[G[C]] = F.map2(fga, fgb)(G.map2(_, _)(f))
     }
   }
 
