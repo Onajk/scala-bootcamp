@@ -28,11 +28,19 @@ object CatsHomework {
       // Task: Define a Semigroup for ClientReport
       // Hint: each field has a Semigroup, e.g. you can use Semigroup.last[UUID] for lastProblemId
       implicit def clientReportSemigroup: Semigroup[ClientReport] =
-        (x: ClientReport, y: ClientReport) => ClientReport(x.total + y.total, x.lastProblemId, x.kinds ++ y.kinds, Semigroup.combine(x.totalPerKind, y.totalPerKind))
+        (x: ClientReport, y: ClientReport) => ClientReport(x.total + y.total, y.lastProblemId, x.kinds ++ y.kinds, Semigroup.combine(x.totalPerKind, y.totalPerKind))
     }
 
     // Task: Write a function to aggregate problems into a ClientReport for each affected Client
-    def aggregate(input: Iterable[Problem]): Map[Client, ClientReport] = ???
+    def aggregate(input: Iterable[Problem]): Map[Client, ClientReport] = {
+      input.foldLeft(Map.empty[Client, ClientReport])((accMap, problem) => {
+        val newClientReport = ClientReport(1, problem.id, NonEmptySet.one(problem.kind), Map(problem.kind -> 1))
+        accMap.get(problem.client) match {
+          case None => accMap + (problem.client -> newClientReport)
+          case Some(clientReport) => accMap.updated(problem.client, clientReport.combine(newClientReport))
+        }
+      })
+    }
   }
 
   object PolyValidation {

@@ -79,7 +79,9 @@ case class Problem(kind: ProblemKind, client: Client)
                                            \/               \/                       */
 type AggregatedResult = Map[ProblemKind, (Int, Map[Client, Int])]
 
-def aggregateProblems(log: Iterator[(Instant, Seq[Problem])]): AggregatedResult = ???
+def aggregateProblems(log: Iterator[(Instant, Seq[Problem])]): AggregatedResult = Monoid.combineAll {
+  log.flatMap(_._2).map(problem => Map(problem.kind -> (1, Map(problem.client -> 1))))
+}
 
 // Without monoids, aggregating into that shape is already pretty cumbersome
 def aggregateManually(log: Iterator[(Instant, Seq[Problem])]): AggregatedResult = {
