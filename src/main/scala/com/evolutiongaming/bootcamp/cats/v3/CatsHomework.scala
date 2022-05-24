@@ -32,14 +32,10 @@ object CatsHomework {
     }
 
     // Task: Write a function to aggregate problems into a ClientReport for each affected Client
-    def aggregate(input: Iterable[Problem]): Map[Client, ClientReport] = {
-      input.foldLeft(Map.empty[Client, ClientReport])((accMap, problem) => {
-        val newClientReport = ClientReport(1, problem.id, NonEmptySet.one(problem.kind), Map(problem.kind -> 1))
-        accMap.get(problem.client) match {
-          case None => accMap + (problem.client -> newClientReport)
-          case Some(clientReport) => accMap.updated(problem.client, clientReport.combine(newClientReport))
-        }
-      })
+    def aggregate(input: Iterable[Problem]): Map[Client, ClientReport] = Monoid.combineAll {
+      input.map(
+        problem => Map(problem.client -> ClientReport(1, problem.id, NonEmptySet.one(problem.kind), Map(problem.kind -> 1)))
+      )
     }
   }
 
