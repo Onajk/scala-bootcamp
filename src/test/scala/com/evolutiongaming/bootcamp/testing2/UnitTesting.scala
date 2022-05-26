@@ -813,7 +813,7 @@ class Exercise12Spec extends AsyncFunSuite {
     new PlayerRepository {
       def byId(id: String): Future[Option[Player]] = all.map(_.find(_.id == id))
 
-      def all: Future[List[Player]] = Future { listOfPlayers.get() }
+      def all: Future[List[Player]] = Future.successful(listOfPlayers.get())
 
       def update(player: Player): Future[Unit] = all.map(list => listOfPlayers.set(list.updated(list.indexWhere(_.id == player.id), player)))
 
@@ -841,7 +841,7 @@ class Exercise12Spec extends AsyncFunSuite {
     // construct fixture
     val repository = repo
     val logging = new Logging {
-      def info(message: String): Future[Unit] = Future { println(message) }
+      def info(message: String): Future[Unit] = Future.successful(println(message))
     }
     val service = PlayerService(repository, logging)
 
@@ -967,7 +967,7 @@ class Exercise14FutureSpec extends AsyncFunSuite {
     new PlayerRepository[Future] {
       def byId(id: String): Future[Option[Player]] = all.map(_.find(_.id == id))
 
-      def all: Future[List[Player]] = Future { listOfPlayers.get() }
+      def all: Future[List[Player]] = Future.successful(listOfPlayers.get())
 
       def update(player: Player): Future[Unit] = all.map(list => listOfPlayers.set(list.updated(list.indexWhere(_.id == player.id), player)))
 
@@ -979,7 +979,7 @@ class Exercise14FutureSpec extends AsyncFunSuite {
     // construct fixture
     val repository = repo
     val logging = new Logging[Future] {
-      def info(message: String): Future[Unit] = Future { println(message) }
+      def info(message: String): Future[Unit] = Future.successful(println(message))
     }
     val service = PlayerService[Future](repository, logging)
 
@@ -995,7 +995,7 @@ class Exercise14FutureSpec extends AsyncFunSuite {
     // construct fixture
     val repository = repo
     val logging = new Logging[Future] {
-      def info(message: String): Future[Unit] = Future { println(message) }
+      def info(message: String): Future[Unit] = Future.successful(println(message))
     }
     val service = PlayerService[Future](repository, logging)
 

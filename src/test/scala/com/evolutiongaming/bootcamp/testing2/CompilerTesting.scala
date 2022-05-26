@@ -154,7 +154,7 @@ object Parametricity {
   // How many ways we can implement this function with?
   def f6[A, B](as: List[A]): List[B] = List.empty[B]
 
-  // How about this one?
+  // How about this one? (we can put number directly)
   def f7[A](a: A): Int = ???
 
   // Exercise 4
