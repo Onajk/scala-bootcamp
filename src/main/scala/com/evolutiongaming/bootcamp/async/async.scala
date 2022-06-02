@@ -1,7 +1,6 @@
 package com.evolutiongaming.bootcamp.async
 
-import java.util.concurrent.atomic.AtomicInteger
-
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
@@ -85,7 +84,14 @@ object FutureFromPromise extends App {
   Add implicit args to the function if needed!
    */
 object Exercise1 extends App {
-  def firstCompleted[T](f1: Future[T], f2: Future[T])(implicit ec: ExecutionContext): Future[T] = ???
+  def firstCompleted[T](f1: Future[T], f2: Future[T])(implicit ec: ExecutionContext): Future[T] = {
+    val promise = Promise[T]()
+
+    f1.onComplete(promise.tryComplete)
+    f2.onComplete(promise.tryComplete)
+
+    promise.future
+  }
 
   {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -128,7 +134,13 @@ Implement sumAll using collection foldLeft and map + flatMap on Future's (or for
 If called on an empty collection, should return Future.successful(0).
  */
 object Exercise2 extends App {
-  def sumAll(futureValues: Seq[Future[Int]])(implicit ec: ExecutionContext): Future[Int] = ???
+  def sumAll(futureValues: Seq[Future[Int]])(implicit ec: ExecutionContext): Future[Int] =
+    futureValues.foldLeft(Future.successful(0))(
+      for {
+        sum <- _
+        nextValue <- _
+      } yield sum + nextValue
+    )
 
   {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -244,7 +256,7 @@ object SharedStateAtomic extends App {
 /*
 Make this work correctly a) first with synchronized blocks, b) then with AtomicReference
  */
-object Exercise3 extends App {
+object Exercise3a extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
   val tasksCount = 100
   val taskIterations = 1000
@@ -252,16 +264,56 @@ object Exercise3 extends App {
 
 
   //PLACE TO FIX - START
+  @volatile
   var balance1: Int = initialBalance
+  @volatile
   var balance2: Int = initialBalance
 
-  def doTaskIteration(): Unit = {
+  def doTaskIteration(): Unit = synchronized {
     val State(newBalance1, newBalance2) = transfer(State(balance1, balance2))
     balance1 = newBalance1
     balance2 = newBalance2
   }
 
   def printBalancesSum(): Unit = {
+    println(balance1 + balance2)
+  }
+  //PLACE TO FIX - FINISH
+
+
+  def transfer(state: State): State = {
+    if (state.balance1 >= state.balance2) {
+      State(state.balance1 - 1, state.balance2 + 1)
+    } else {
+      State(state.balance1 + 1, state.balance2 - 1)
+    }
+  }
+
+  val tasks = (1 to tasksCount).toVector.map(_ => Future {
+    (1 to taskIterations).foreach(_ => doTaskIteration())
+  })
+  val tasksResultFuture: Future[Vector[Unit]] = Future.sequence(tasks)
+  Await.ready(tasksResultFuture, 5.seconds)
+
+  printBalancesSum() //should print 20
+
+  final case class State(balance1: Int, balance2: Int)
+}
+
+object Exercise3b extends App {
+  import scala.concurrent.ExecutionContext.Implicits.global
+  val tasksCount = 100
+  val taskIterations = 1000
+  val initialBalance = 10
+
+
+  //PLACE TO FIX - START
+  val stateRef = new AtomicReference[State](State(initialBalance, initialBalance))
+
+  def doTaskIteration(): Unit = stateRef.updateAndGet(transfer)
+
+  def printBalancesSum(): Unit = {
+    val State(balance1, balance2) = stateRef.get()
     println(balance1 + balance2)
   }
   //PLACE TO FIX - FINISH
