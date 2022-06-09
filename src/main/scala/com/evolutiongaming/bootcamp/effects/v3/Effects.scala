@@ -1,7 +1,7 @@
 package com.evolutiongaming.bootcamp.effects.v3
 
 import cats.Monad
-import cats.effect.{Async, ExitCode, IO, IOApp, Sync}
+import cats.effect.{Async, ExitCode, IO, IOApp, MonadThrow, Sync}
 import cats.syntax.all._
 
 import java.util.concurrent.Executors
@@ -154,18 +154,38 @@ import com.evolutiongaming.bootcamp.effects.v3.ConsoleIO._
  */
 object HelloWorldIO extends IOApp {
 
-  private val nameProgram = for {
+  private val nameProgram: IO[Unit] = for {
     _    <- putString("What's your name?")
     name <- readString
     _    <- putString(s"Hi, $name!")
   } yield ()
 
   def run(args: List[String]): IO[ExitCode] =
-    nameProgram.as(ExitCode.Success)
+    nameProgram.as(ExitCode.Success) // .map(_ => ExitCode.Success)
 }
 
 object HelloWorldTF extends IOApp {
-  def run(args: List[String]): IO[ExitCode] = ???
+
+  trait Console[F[_]] {
+    def putString(value: String): F[Unit]
+    def readString: F[String]
+  }
+
+  object Console {
+    def apply[F[_]: Sync]: Console[F] = new Console[F] {
+      def putString(value: String): F[Unit] = Sync[F].delay(println(value))
+      def readString: F[String] = Sync[F].delay(StdIn.readLine())
+    }
+  }
+
+  def nameProgram[F[_]: Monad](console: Console[F]): F[Unit] = for {
+    _    <- console.putString("What's your name?")
+    name <- console.readString
+    _    <- console.putString(s"Hi, $name!")
+  } yield ()
+
+  def run(args: List[String]): IO[ExitCode] =
+    nameProgram(Console[IO]).as(ExitCode.Success)
 }
 
 object Exercise1_Common {
@@ -217,8 +237,24 @@ object Exercise1_Imperative {
  *  - Tests in `EffectsSpec` to check your work
  */
 object Exercise1_Functional extends IOApp {
+  import com.evolutiongaming.bootcamp.effects.v3.Exercise1_Common.response
 
-  def process(console: Console, counter: Int = 0): IO[ExitCode] = ???
+  def process(console: Console, counter: Int = 0): IO[ExitCode] = {
+    import console._
+
+    for {
+      _ <- putString("What is your favourite animal?")
+      animal <- readString
+      output = response(animal)
+      exitCode <- output.map { result => putString(result).as(ExitCode.Success) }
+        .getOrElse {
+          if (counter >= 2)
+            putString("I am disappointed. You have failed to answer too many times.").as(ExitCode.Error)
+          else
+            putString("Empty input is not valid, try again...") *> process(console, counter + 1)
+        }
+    } yield exitCode
+  }
 
   def run(args: List[String]): IO[ExitCode] = process(ConsoleIO)
 }
@@ -242,7 +278,11 @@ object SuspendApp extends IOApp {
   ): IO[Long] =
     n match {
       case 0 => IO.pure(a)
-      case _ => fib(n - 1, b, a + b).map(_ + 0) // Question: Why did I add this useless `.map` here?
+      //case _ => fib(n - 1, b, a + b).map(_ + 0) // Question: Why did I add this useless `.map` here?
+      // to break tail recursion and show stackoverflow
+      case _ => IO.suspend(fib(n - 1, b, a + b).map(_ + 0))
+      // also possible:
+      //case _ => IO(fib(n - 1, b, a + b).map(_ + 0)).flatten
     }
 
   def run(args: List[String]): IO[ExitCode] =
@@ -393,16 +433,36 @@ object ErrorsExercise extends IOApp {
     override def toString: String = s"This is $name and he is $age years old"
   }
 
-  def readPerson[F[_]](console: Console[F]): F[Person] = {
+  def readPerson[F[_]: MonadThrow](console: Console[F]): F[Person] = {
 
-    val readName: F[Name] = ???
+    val readName: F[Name] =
+      for {
+        _ <- console.putString("Enter person name:")
+        nameString <- console.readString
+        name <- Name.from(nameString).fold(
+          //validationError => validationError.raiseError[F, Name],
+          //value => value.pure[F]
+          _.raiseError[F, Name],
+          _.pure[F]
+        )
+      } yield name
 
-    val readAge: F[Age] = ???
+    val readAge: F[Age] =
+      for {
+        _ <- console.putString("Enter person age:")
+        ageString <- console.readString
+        ageInt <- Try(ageString.toInt)
+          .toOption
+          .map(_.pure[F])
+          .getOrElse(new IllegalArgumentException("Age should be Integer").raiseError[F, Int])
+        age <- Age.from(ageInt).liftTo[F] // F.fromEither
+      } yield age
 
-    ???
+    (readName, readAge).mapN(Person)
   }
 
-  def program[F[_]: Monad](console: Console[F]): F[Unit] = ??? // read person and print it
+  def program[F[_]: MonadThrow](console: Console[F]): F[Unit] =
+    readPerson(console).flatMap { person => console.putString(person.toString) }
 
   def run(args: List[String]): IO[ExitCode] =
     program(Console[IO]).as(ExitCode.Success)
