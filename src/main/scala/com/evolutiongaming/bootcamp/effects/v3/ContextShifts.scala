@@ -46,13 +46,21 @@ object ContextShifts extends IOApp {
 
   def basicShiftingProgram: IO[Unit] = {
 
+    val cpuExecutionCtx: ExecutionContext = ExecutionContext.fromExecutor(
+      Executors.newFixedThreadPool(2, newThreadFactory("cpu-bound"))
+    )
+
+    val cpuShift: ContextShift[IO] = IO.contextShift(cpuExecutionCtx)
+
     def cpuBoundTask(i: Int): IO[Int] =
       if (i == 100_000_000) IO.pure(i)
       else (if (i % 10_000_000 == 0) logLine(s"Reached $i") else IO.unit) *> IO.suspend(cpuBoundTask(i + 1))
 
     for {
       _ <- logLine("Started")
+      _ <- cpuShift.shift
       _ <- cpuBoundTask(1)
+      _ <- IO.shift
       _ <- logLine("Finished")
     } yield ()
   }
@@ -105,6 +113,7 @@ object ContextShiftsExercise extends IOApp {
   /* Exercise #2
    * Refactor program to do blocking work using Blocker
    */
+  // reading file is a blocking call
   def blockingProgram: IO[Unit] = {
 
     def listSourceFiles(root: Path): IO[List[Path]] =

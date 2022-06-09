@@ -1,6 +1,7 @@
 package com.evolutiongaming.bootcamp.effects.v3
 
-import cats.effect.{ExitCase, ExitCode, IO, IOApp}
+import cats.effect.{BracketThrow, ExitCase, ExitCode, IO, IOApp, Sync}
+import cats.syntax.all._
 
 import scala.concurrent.duration._
 import scala.io.{BufferedSource, Source}
@@ -35,6 +36,20 @@ object BracketApp extends IOApp {
   def readSource(source: BufferedSource): IO[Iterator[String]] = IO(source.getLines())
 
   def bracketProgram: IO[Unit] =
+    acquire("ReadMe.md")
+      .bracket { bufferedSource =>
+        readSource(bufferedSource)
+          .map(_.mkString("\n"))
+          .flatMap(str => IO.delay(println(str)))
+      } { bufferedSource =>
+        release(bufferedSource) // <- this operation is concurrent with `use` section in case of cancellation
+      }
+
+  def acquireF[F[_]: Sync](name: String): F[BufferedSource] = Sync[F].delay(Source.fromFile(name))
+  def releaseF[F[_]: Sync](source: BufferedSource): F[Unit] = Sync[F].delay(source.close())
+  def readSourceF[F[_]: Sync](source: BufferedSource): F[Iterator[String]] = Sync[F].delay(source.getLines())
+
+  def bracketProgramF[F[_]: Sync: BracketThrow]: IO[Unit] =
     acquire("ReadMe.md")
       .bracket { bufferedSource =>
         readSource(bufferedSource)

@@ -1,6 +1,7 @@
 package com.evolutiongaming.bootcamp.effects.v3
 
 import cats.effect.{Blocker, ExitCode, IO, IOApp, Resource}
+import cats.syntax.all._
 import com.evolutiongaming.bootcamp.effects.v3.ResourceExample.DBModule.DBService
 import com.evolutiongaming.bootcamp.effects.v3.ResourceExample.KafkaModule.KafkaService
 
@@ -51,10 +52,36 @@ object ResourceApp extends IOApp {
       .map(_.mkString("\n"))
       .use(str => IO.delay(println(str)))
 
-  def filesProgram: IO[Unit] = ???
+  /*
+  def filesProgram: IO[Unit] =
+    (for {
+      lines1 <- fileResource("ReadMe.md").evalMap(readSource)
+      lines2 <- fileResource("ReadMe.md").evalMap(readSource)
+      lines3 <- fileResource("ReadMe.md").evalMap(readSource)
+    } yield lines1 ++ lines2 ++ lines3)
+      .map(_.toList.filter(_.toLowerCase.contains("evolution")).mkString("\n"))
+      .use(str => IO.delay(println(str)))
+  */
+
+  def filesProgram: IO[Unit] =
+    (for {
+      file1 <- fileResource("ReadMe.md")
+      file2 <- fileResource("ReadMe.md")
+      file3 <- fileResource("ReadMe.md")
+    } yield (file1, file2, file3)).use {
+      case (file1, file2, file3) =>
+        (for {
+          lines1 <- readSource(file1)
+          lines2 <- readSource(file2)
+          lines3 <- readSource(file3)
+        } yield lines1 ++ lines2 ++ lines3)
+          .map(_.filter(_.toLowerCase.contains("evolution")).mkString("\n"))
+          .flatMap(str => IO.delay(println(str)))
+    }
 
   def run(args: List[String]): IO[ExitCode] =
-    resourceProgram.as(ExitCode.Success)
+    //resourceProgram.as(ExitCode.Success)
+    filesProgram.as(ExitCode.Success)
 }
 
 object InitializationOrder extends IOApp {
