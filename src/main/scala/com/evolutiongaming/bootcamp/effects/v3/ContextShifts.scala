@@ -74,16 +74,43 @@ object ContextShifts extends IOApp {
     */
   def blockingProgram: IO[Unit] = {
 
+    val blocker = Blocker.fromExecutorService(IO.delay(
+      Executors.newCachedThreadPool(newThreadFactory("blocker-pool"))
+    ))
+
     def blockingCall(id: Int): Unit = {
       println(s"${Thread.currentThread().toString} Starting blocking work id:$id")
       Thread.sleep(5000)
       println(s"${Thread.currentThread().toString} Finished blocking work id:$id")
     }
 
-    ???
+//    blocker.use { blocker =>
+//      (0 to 100).toList.map(i => blocker.blockOn(IO.delay(blockingCall(i)))).parSequence.void
+//    }
+
+    for {
+      _ <- logLine("Started")
+      _ <- blocker.use { blocker =>
+        (0 to 100).toList.map(i => blocker.blockOn(IO.delay(blockingCall(i)))).parSequence.void
+      }
+      _ <- logLine("Finished")
+    } yield ()
+
+//    for {
+//      _ <- logLine("Started")
+//      fiber <- (0 to 9).toList.parTraverse(i => IO.delay(blockingCall(i))).void.start
+//      _ <- fiber.join
+//      _ <- logLine("Finished")
+//    } yield ()
   }
 
   def threadStarvationProgram: IO[Unit] = {
+
+    val cpuExecutionCtx: ExecutionContext = ExecutionContext.fromExecutor(
+      Executors.newFixedThreadPool(2, newThreadFactory("cpu-bound"))
+    )
+
+    val cpuShift: ContextShift[IO] = IO.contextShift(cpuExecutionCtx)
 
     def blockingCall(id: Int): Unit = {
       println(s"${Thread.currentThread().toString} Starting blocking work id:$id")
@@ -93,13 +120,15 @@ object ContextShifts extends IOApp {
 
     for {
       _ <- logLine("Started")
+      fiber <- (0 to 9).toList.parTraverse(i => cpuShift.shift *> IO.delay(blockingCall(i))).void.start
+      _ <- fiber.join
       _ <- logLine("Finished")
     } yield ()
   }
 
   def run(args: List[String]): IO[ExitCode] =
-    basicShiftingProgram.as(ExitCode.Success)
-//    blockingProgram.as(ExitCode.Success)
+//    basicShiftingProgram.as(ExitCode.Success)
+    blockingProgram.as(ExitCode.Success)
 //    threadStarvationProgram.as(ExitCode.Success)
 }
 
@@ -108,13 +137,30 @@ object ContextShiftsExercise extends IOApp {
   /* Exercise #1
    * Print "hello" 20 times with 1 second interval. Use single threaded pool for this.
    */
-  def singleThreadProgram: IO[Unit] = ???
+  def singleThreadProgram: IO[Unit] =
+    (1 to 20).toList
+      .map { iteration =>
+        for {
+          _ <- IO.contextShift(
+            ExecutionContext.fromExecutor(
+              Executors.newFixedThreadPool(1, newThreadFactory("cpu-bound"))
+            )
+          ).shift
+          _ <- IO.delay(println(s"${Thread.currentThread().toString} - $iteration - hello"))
+          _ <- IO.sleep(1.second)
+        } yield ()
+      }
+      .sequence
+      .void
 
   /* Exercise #2
    * Refactor program to do blocking work using Blocker
    */
   // reading file is a blocking call
   def blockingProgram: IO[Unit] = {
+    val blocker = Blocker.fromExecutorService(IO.delay(
+      Executors.newCachedThreadPool(newThreadFactory("blocker-pool"))
+    ))
 
     def listSourceFiles(root: Path): IO[List[Path]] =
       IO.delay {
@@ -130,7 +176,10 @@ object ContextShiftsExercise extends IOApp {
 
     for {
       sourceFiles      <- listSourceFiles(Paths.get("./src"))
-      listOfLineLength <- sourceFiles.map(linesOfCode).parSequence
+//      listOfLineLength <- sourceFiles.map(linesOfCode).parSequence
+      listOfLineLength <- blocker.use { blocker =>
+        sourceFiles.map(path => blocker.blockOn(linesOfCode(path))).parSequence
+      }
       linesOfCode       = listOfLineLength.sum
       _                <- IO.delay(println((s"Total Lines of code: $linesOfCode")))
     } yield ()
@@ -138,8 +187,8 @@ object ContextShiftsExercise extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =
     for {
-      _ <- singleThreadProgram
-//      _ <- blockingProgram
+//      _ <- singleThreadProgram
+      _ <- blockingProgram
     } yield ExitCode.Success
 
 }
