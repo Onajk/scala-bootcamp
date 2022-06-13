@@ -60,5 +60,14 @@ object BracketApp extends IOApp {
       }
 
   def run(args: List[String]): IO[ExitCode] =
-    bracketProgram.as(ExitCode.Success)
+    //bracketProgram.as(ExitCode.Success)
+    //bracketProgramF[IO].as(ExitCode.Success)
+    IO.delay(print("Resource"))
+      .bracket { _ =>
+        IO.raiseError(new RuntimeException("Error in use"))
+    } { _ =>
+        IO.raiseError(new RuntimeException("Error in release"))
+      }
+      .handleErrorWith{ e => IO.delay(println(e.getMessage)) }
+      .as(ExitCode.Success)
 }

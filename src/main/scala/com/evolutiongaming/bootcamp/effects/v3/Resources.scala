@@ -48,7 +48,7 @@ object ResourceApp extends IOApp {
 
   def resourceProgram: IO[Unit] =
     fileResource("ReadMe.md")
-      .evalMap(readSource)
+      .evalMap(readSource) // works the same as flatMap for F[A]
       .map(_.mkString("\n"))
       .use(str => IO.delay(println(str)))
 
