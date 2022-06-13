@@ -1,9 +1,9 @@
 package com.evolutiongaming.bootcamp.effects.v3
 
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{Concurrent, ExitCode, IO, IOApp, Sync, Timer}
 import cats.syntax.all._
 
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, TimeoutException}
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.annotation.tailrec
 import scala.concurrent.duration._
@@ -57,7 +57,7 @@ object FutureTimeout extends IOApp {
                )
              )
            )
-      //      _ <- IO.sleep(5.seconds)
+      _ <- IO.sleep(5.seconds)
     } yield ExitCode.Success
 }
 
@@ -79,7 +79,7 @@ object IOTimeout extends IOApp {
     for {
       _ <- runTask(10).timeout(5.seconds).attempt
       _ <- IO.delay(println(s"${Thread.currentThread().toString} Cancelled"))
-      //      _ <- IO.sleep(5.seconds)
+      _ <- IO.sleep(5.seconds)
     } yield ExitCode.Success
 }
 
@@ -97,7 +97,7 @@ object RaceApp extends IOApp {
   def run(args: List[String]): IO[ExitCode] =
     for {
       _ <- IO.race(tick, workThatDoesFaster).void
-      //      _ <- IO.sleep(5.seconds)
+      _ <- IO.sleep(5.seconds)
       _ <- IO.delay(println("Terminating"))
     } yield ExitCode.Success
 }
@@ -111,10 +111,31 @@ object SelfMadeTimeoutExercise extends IOApp {
       .foreverM
       .void
 
-  def timeoutIO[A](task: IO[A], timeout: FiniteDuration): IO[A] = ???
+  def timeoutIO[A](task: IO[A], timeout: FiniteDuration): IO[A] =
+    IO.race(
+      IO.sleep(timeout).as(new TimeoutException(s"Timeout of $timeout reached.")),
+      task
+    ).flatMap(IO.fromEither)
+
+  def tickF[F[_]](implicit F: Sync[F], T: Timer[F]): F[Unit] =
+    F
+      .delay(println("Working work long long never terminating"))
+      .flatMap(_ => T.sleep(1.second))
+      .foreverM
+      .void
+
+  def timeoutF[F[_]: Concurrent: Timer, A](task: F[A], timeout: FiniteDuration): F[A] =
+    Concurrent[F]
+      .race(
+        Timer[F].sleep(timeout).as(new TimeoutException(s"Timeout of $timeout reached.")),
+        task
+      ).flatMap(Concurrent[F].fromEither)
 
   def run(args: List[String]): IO[ExitCode] =
-    timeoutIO(tick, 5.seconds).as(ExitCode.Success)
+    //timeoutIO(tick, 5.seconds).as(ExitCode.Success)
+    timeoutF(tickF[IO], 5.second).handleErrorWith{ e =>
+      IO.delay(println(s"Failed with ${e.getMessage}"))
+    }.as(ExitCode.Success)
 }
 
 /* When writing your cancellable code, be aware that cancellation is a concurrent action.
@@ -174,6 +195,7 @@ object Cancellable extends IOApp {
                  _ => IO.delay(println(s"cancelling $fiber...")) *> fiber.cancel *> IO.delay(println("IO cancelled")),
                  i => IO.delay(println(s"IO completed with: $i"))
                )
+      _     <- IO.sleep(5.seconds)
     } yield ExitCode.Success
 
     program.guarantee(IO(ec.shutdown()))
@@ -267,8 +289,9 @@ object CancelBoundariesExercise extends IOApp {
         id: String,
         maxRetries: Int,
         interval: FiniteDuration
-      ): IO[A] =
-        task
+      ): IO[A] = {
+        //task
+        IO.cancelBoundary *> task
           .handleErrorWith {
             case NonFatal(e) =>
               IO
@@ -285,6 +308,7 @@ object CancelBoundariesExercise extends IOApp {
                     )
                 }
           }
+      }
     }
 
     val io = IO.delay(if (Random.nextBoolean()) throw new RuntimeException("kaboom!") else "SUCCESS!")
@@ -309,7 +333,8 @@ object CancelBoundariesExercise extends IOApp {
 
     def cpuBoundCompute(value: BigInt, multiplier: BigInt): IO[BigInt] = {
       val log = IO.delay(println(s"${Thread.currentThread().toString} Calculating... $multiplier"))
-      log *> IO.suspend(cpuBoundCompute(value * multiplier, multiplier + 1))
+      //log *> IO.suspend(cpuBoundCompute(value * multiplier, multiplier + 1))
+      IO.cancelBoundary *> log *> IO.suspend(cpuBoundCompute(value * multiplier, multiplier + 1))
     }
 
     for {
