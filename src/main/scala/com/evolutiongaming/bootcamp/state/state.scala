@@ -1,6 +1,6 @@
 package com.evolutiongaming.bootcamp.state
 
-import cats.Monad
+import cats.{Applicative, Monad}
 import cats.effect._
 import cats.effect.concurrent.{Deferred, Ref, Semaphore}
 import cats.implicits.toTraverseOps
@@ -123,6 +123,42 @@ trait Counter[F[_]] {
   def inc: F[Unit]
 
   def get: F[Long]
+}
+
+object CounterImplementationF extends App {
+  val counterIO = makeCounterIO
+
+  def makeCounterIO: IO[Counter[IO]] = makeCounter[IO]
+
+  def makeCounter[F[_]: Sync]: F[Counter[F]] = Sync[F].delay(
+    new Counter[F] {
+//    private var counter = 0
+//
+//    override def inc: F[Unit] = Sync[F].delay(counter += 1)
+//
+//    override def get: F[Long] = Sync[F].delay(counter)
+
+      private var counter = new AtomicLong(0)
+
+      override def inc: F[Unit] = Sync[F].delay(counter.incrementAndGet())
+
+      override def get: F[Long] = Sync[F].delay(counter.get())
+  })
+
+  val x = counterIO.flatMap(c => c.inc *> c.get)
+  val y1 = Applicative[IO].map2(x, x)(_ + _).unsafeRunSync()
+  val y2 = Applicative[IO].map2(counterIO.flatMap(c => c.inc *> c.get), counterIO.flatMap(c => c.inc *> c.get))(_ + _).unsafeRunSync()
+  println(s"y1=$y1, y2=$y2")
+}
+
+object CounterImplementationIO extends App {
+  def makeCounterIO: Counter[IO] = new Counter[IO] {
+    private var counter = 0
+
+    override def inc: IO[Unit] = IO.delay(counter += 1)
+
+    override def get: IO[Long] = IO.delay(counter)
+  }
 }
 
 object Counter {
@@ -248,7 +284,7 @@ object CounterConcurrencyDemo extends IOApp {
   * T1: write the value => 6
   * T2: write the value => 6
   *
-  * Question 1: how do we fix it?
+  * Question 1: how do we fix it? Use atomic way (for example ref.update)
   */
 
 
@@ -298,6 +334,7 @@ object MutableVsImmutableStateDemo extends IOApp {
 
   /**
     * Should the state "inside" `Ref` be mutable or immutable? Does it matter?
+    * it can be but we will have to be very careful
     */
 
   trait EventLog[F[_]] {
@@ -338,6 +375,7 @@ object MutableVsImmutableStateDemo extends IOApp {
     } yield ()
 
   // Question 2: which is correct? Mutable, immutable, or both?
+  // immutable is always correct
 
   override def run(args: List[String]): IO[ExitCode] =
     for {
@@ -347,7 +385,15 @@ object MutableVsImmutableStateDemo extends IOApp {
 }
 
 object RefAccessDemo {
-  def update[F[_] : Monad, A](ref: Ref[F, A])(f: A => F[A]): F[A] = ???
+  import cats.syntax.all._
+
+  def update[F[_] : Monad, A](ref: Ref[F, A])(f: A => F[A]): F[A] = {
+    for {
+      a <- ref.get
+      aNew <- f(a)
+      _ <- ref.set(aNew)
+    } yield a
+  }
 }
 
 /** Other Cats-Effect concurrency primitives */
