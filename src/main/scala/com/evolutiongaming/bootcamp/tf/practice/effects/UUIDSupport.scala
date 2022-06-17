@@ -13,10 +13,9 @@ object UUIDSupport {
 
   def apply[F[_]: UUIDSupport]: UUIDSupport[F] = implicitly
 
-  implicit def apply[F[_]: Sync]: UUIDSupport[F] =
+  implicit def uuidSupport[F[_]: Sync]: UUIDSupport[F] =
     new UUIDSupport[F] {
       def read(str: String): F[UUID] = Sync[F].delay(UUID.fromString(str))
-
-      def random: F[UUID] = Sync[F].delay(UUID.randomUUID())
+      def random: F[UUID]            = Sync[F].delay(UUID.randomUUID())
     }
 }
