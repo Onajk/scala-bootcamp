@@ -137,21 +137,27 @@ object ContextShiftsExercise extends IOApp {
   /* Exercise #1
    * Print "hello" 20 times with 1 second interval. Use single threaded pool for this.
    */
-  def singleThreadProgram: IO[Unit] =
-    (1 to 20).toList
-      .map { iteration =>
-        for {
-          _ <- IO.contextShift(
-            ExecutionContext.fromExecutor(
-              Executors.newFixedThreadPool(1, newThreadFactory("cpu-bound"))
-            )
-          ).shift
-          _ <- IO.delay(println(s"${Thread.currentThread().toString} - $iteration - hello"))
-          _ <- IO.sleep(1.second)
-        } yield ()
-      }
-      .sequence
-      .void
+  def singleThreadProgram: IO[Unit] = {
+    val cpuExecutionCtx = ExecutionContext.fromExecutor(
+      Executors.newFixedThreadPool(1, newThreadFactory("my-single-pool"))
+    )
+
+    val cpuShift = IO.contextShift(cpuExecutionCtx)
+
+    (0 to 19).toList.map(_ => cpuShift.shift *> logLine("hello") *> IO.sleep(1.second)).sequence.void
+
+    //    (1 to 20).toList
+    //      .map { iteration =>
+    //        for {
+    //          _ <- cpuShift.shift
+    //          _ <- IO.delay(println(s"${Thread.currentThread().toString} - $iteration - hello"))
+    //          _ <- IO.sleep(1.second)
+    //        } yield ()
+    //      }
+    //      .sequence
+    //      .void
+  }
+
 
   /* Exercise #2
    * Refactor program to do blocking work using Blocker
@@ -174,15 +180,14 @@ object ContextShiftsExercise extends IOApp {
     def linesOfCode(file: Path): IO[Long] =
       IO.delay(Files.lines(file).count())
 
-    for {
-      sourceFiles      <- listSourceFiles(Paths.get("./src"))
-//      listOfLineLength <- sourceFiles.map(linesOfCode).parSequence
-      listOfLineLength <- blocker.use { blocker =>
-        sourceFiles.map(path => blocker.blockOn(linesOfCode(path))).parSequence
-      }
-      linesOfCode       = listOfLineLength.sum
-      _                <- IO.delay(println((s"Total Lines of code: $linesOfCode")))
-    } yield ()
+    blocker.use { blocker =>
+      for {
+        sourceFiles      <- blocker.blockOn(listSourceFiles(Paths.get("./src")))
+        listOfLineLength <- blocker.blockOn(sourceFiles.map(linesOfCode).parSequence)
+        linesOfCode       = listOfLineLength.sum
+        _                <- IO.delay(println(s"Total Lines of code: $linesOfCode"))
+      } yield ()
+    }
   }
 
   def run(args: List[String]): IO[ExitCode] =
