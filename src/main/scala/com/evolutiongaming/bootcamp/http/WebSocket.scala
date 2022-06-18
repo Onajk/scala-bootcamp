@@ -117,7 +117,8 @@ object WebSocketServer extends IOApp {
 // for the built-in JDK 11+ HTTP client available.
 object WebSocketClient extends IOApp {
 
-  private val uri = uri"ws://localhost:9002/echo"
+//  private val uri = uri"ws://localhost:9002/echo"
+  private val uri = uri"ws://localhost:9002/chat"
 
   private def printLine(string: String = ""): IO[Unit] = IO(println(string))
 
