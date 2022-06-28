@@ -1,7 +1,6 @@
 package com.evolutiongaming.bootcamp.http
 
-import java.time.{Instant, LocalDate}
-
+import java.time.{Instant, LocalDate, LocalDateTime}
 import cats.data.{EitherT, Validated}
 import cats.effect.{Blocker, ExitCode, IO, IOApp}
 import cats.syntax.all._
@@ -158,7 +157,16 @@ object HttpServer extends IOApp {
         .leftMap(t => ParseFailure(s"Failed to decode LocalDate", t.getMessage))
         .toValidatedNel
     }
-    object LocalDateMatcher extends QueryParamDecoderMatcher[LocalDate](name = "date")
+//    object LocalDateMatcher extends QueryParamDecoderMatcher[LocalDate](name = "date")
+    object LocalDateMatcher extends ValidatingQueryParamDecoderMatcher[LocalDate](name = "date")
+
+    implicit val localDateAndTimeDecoder: QueryParamDecoder[Instant] = { param =>
+      Validated
+        .catchNonFatal(Instant.parse(param.value))
+        .leftMap(t => ParseFailure(s"Timestamp is invalid", t.getMessage))
+        .toValidatedNel
+    }
+    object LocalDateAndTimeMatcher extends ValidatingQueryParamDecoderMatcher[Instant](name = "timestamp")
 
     HttpRoutes.of[IO] {
 
@@ -167,13 +175,22 @@ object HttpServer extends IOApp {
         Ok(s"Matched path param: $localDate")
 
       // curl "localhost:9001/params?date=2020-11-10"
-      case GET -> Root / "params" :? LocalDateMatcher(localDate) =>
-        Ok(s"Matched query param: $localDate")
+      case GET -> Root / "params" :? LocalDateMatcher(localDate) => // +& LocalDateMatcher(localDate2) =>
+//        Ok(s"Matched query param: $localDate")
+        localDate.fold(
+          _ => BadRequest("Failed"),
+          localDate => Ok(s"Matched query param: $localDate")
+        )
 
       // Exercise 1. Implement HTTP endpoint that validates the provided timestamp in ISO-8601 format. If valid,
       // 200 OK status must be returned with "Timestamp is valid" string in the body. If not valid,
       // 400 Bad Request status must be returned with "Timestamp is invalid" string in the body.
       // curl "localhost:9001/params/validate?timestamp=2020-11-04T14:19:54.736Z"
+      case  GET -> Root / "params" / "validate" :? LocalDateAndTimeMatcher(localDateAndTime) =>
+        localDateAndTime.fold (
+          _ => BadRequest("Timestamp is invalid"),
+          _ => Ok("Timestamp is valid")
+        )
     }
   }
 
@@ -193,6 +210,13 @@ object HttpServer extends IOApp {
     // present and contains an integer value, it should add 1 to the value and request the client to update
     // the cookie. Otherwise it should request the client to store "1" in the "counter" cookie.
     // curl -v "localhost:9001/cookies" -b "counter=9"
+    case req @ GET -> Root / "cookies" =>
+      val counterValue =
+        req.cookies
+          .find(_.name == "counter")
+          .flatMap(_.content.toIntOption)
+          .fold(1)(_ + 1)
+      Ok().map(_.addCookie("counter", counterValue.toString))
   }
 
   // JSON ENTITIES
@@ -257,9 +281,27 @@ object HttpServer extends IOApp {
     // and return that number back in OK 200 response. 400 Bad Request response with an empty body is
     // expected if the request is invalid for any reason.
     // curl -XPOST "localhost:9001/multipart" -F "character=n" -F file=@text.txt
-    case req @ POST -> Root / "multipart" =>
+    case req@POST -> Root / "multipart" =>
       req.as[Multipart[IO]].flatMap { multipart =>
-        ???
+        val partContents = for {
+          characterPart <- multipart.parts.find(_.name.contains("character"))
+          filePart <- multipart.parts.find(_.name.contains("file"))
+        } yield (characterPart.as[String], filePart.as[String]).tupled
+
+        partContents.sequence
+          .map { partContentsOpt =>
+            partContentsOpt.flatMap {
+              case (character, file) =>
+                Some(character)
+                  .filter(_.length == 1)
+                  .flatMap(_.headOption)
+                  .map(char => file.count(_ == char))
+            }
+        }
+        .flatMap {
+          case None        => BadRequest("")
+          case Some(count) => Ok(count.toString)
+        }
       }
   }
 
@@ -276,7 +318,7 @@ object HttpServer extends IOApp {
     BlazeServerBuilder[IO](ExecutionContext.global)
       .bindHttp(port = 9001, host = "localhost")
       .withHttpApp(httpApp)
-      .serve
+      .serve // .resource
       .compile
       .drain
       .as(ExitCode.Success)
