@@ -368,6 +368,13 @@ object HttpClient extends IOApp {
 
         // Exercise 5. Call HTTP endpoint, implemented in scope of Exercise 2, and print the response cookie.
         // curl -v "localhost:9001/cookies" -b "counter=9"
+        _ <- printLine(string = "Exercise 5")
+        _ <- for {
+          request <- Method.GET(uri / "cookies").map(_.addCookie("counter", "9"))
+          _ <- client.run(request).use { response =>
+            printLine(s"Response cookie is: ${response.cookies.find(_.name == "counter")}")
+          }
+        } yield ()
         _ <- printLine()
 
         _ <- printLine(string = "Executing request with JSON entities:")

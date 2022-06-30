@@ -2,7 +2,7 @@ package com.evolutiongaming.bootcamp.http
 
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.syntax.all._
-import fs2.{Pipe, Stream}
+import fs2.{Pipe, Pull, Stream}
 import fs2.concurrent.{Queue, Topic}
 import org.http4s._
 import org.http4s.client.jdkhttpclient.{JdkWSClient, WSFrame, WSRequest}
@@ -13,7 +13,10 @@ import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
 
 import java.net.http.HttpClient
+import java.time.{Instant, Duration => JavaDuration}
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
 
 object WebSocketIntroduction {
 
@@ -56,16 +59,47 @@ object WebSocketServer extends IOApp {
           case WebSocketFrame.Text(message, _) => WebSocketFrame.Text(message)
         }
 
+      // Exercise 1
+      val currentTimePipe: Pipe[IO, WebSocketFrame, WebSocketFrame] =
+        _.collect {
+          case WebSocketFrame.Text(message, _) => message.trim
+        }
+        .evalMap {
+          case "time" => for {
+            //              time <- IO.delay(Instant.now())
+            time <- timer.clock.realTime(TimeUnit.MILLISECONDS).map(Instant.ofEpochMilli(_).toString)
+          } yield WebSocketFrame.Text(time)
+        }
+
+      // Exercise 2
+      def notifyPipe(joinedAt: Instant): Pipe[IO, WebSocketFrame, WebSocketFrame] =
+        _.collect {
+          case WebSocketFrame.Text(message, _) => message.trim
+        }
+        .evalMap {
+          case "time" => timer.clock.instantNow.map(_.toString)
+          case text => IO.pure(text)
+        }
+        .merge(Stream.eval(reporDuration(joinedAt)).delayBy(5.seconds).repeat)
+        .map(WebSocketFrame.Text(_))
+
+      def reporDuration(start: Instant): IO[String] =
+        timer.clock.instantNow.map { now =>
+          val duration = JavaDuration.between(start, now)
+          s"You have been connected for ${duration.toSeconds} seconds!"
+        }
+
       for {
         // Unbounded queue to store WebSocket messages from the client, which are pending to be processed.
         // For production use bounded queue seems a better choice. Unbounded queue may result in out of
         // memory error, if the client is sending messages quicker than the server can process them.
+        joinedAt <- timer.clock.instantNow
         queue <- Queue.unbounded[IO, WebSocketFrame]
         response <- WebSocketBuilder[IO].build(
           // Sink, where the incoming WebSocket messages from the client are pushed to.
           receive = queue.enqueue,
           // Outgoing stream of WebSocket messages to send to the client.
-          send = queue.dequeue.through(echoPipe),
+          send = queue.dequeue.through(notifyPipe(joinedAt)),
         )
       } yield response
 
@@ -85,9 +119,17 @@ object WebSocketServer extends IOApp {
     case GET -> Root / "chat" =>
       WebSocketBuilder[IO].build(
         // Sink, where the incoming WebSocket messages from the client are pushed to.
-        receive = chatTopic.publish.compose[Stream[IO, WebSocketFrame]](_.collect {
-          case WebSocketFrame.Text(message, _) => message
-        }),
+        receive = chatTopic.publish.compose[Stream[IO, WebSocketFrame]](
+          _
+            .collect { case WebSocketFrame.Text(message, _) => message }
+            .pull
+            .uncons1
+            .flatMap {
+              case None => Pull.done
+              case Some((name, stream)) => stream.map(message => s"$name: $message").pull.echo
+            }
+            .stream
+        ),
         // Outgoing stream of WebSocket messages to send to the client.
         send = chatTopic.subscribe(maxQueued = 10).map(WebSocketFrame.Text(_)),
       )
@@ -117,8 +159,8 @@ object WebSocketServer extends IOApp {
 // for the built-in JDK 11+ HTTP client available.
 object WebSocketClient extends IOApp {
 
-//  private val uri = uri"ws://localhost:9002/echo"
-  private val uri = uri"ws://localhost:9002/chat"
+  private val uri = uri"ws://localhost:9002/echo"
+//  private val uri = uri"ws://localhost:9002/chat"
 
   private def printLine(string: String = ""): IO[Unit] = IO(println(string))
 
@@ -128,7 +170,8 @@ object WebSocketClient extends IOApp {
 
     clientResource.use { client =>
       for {
-        _ <- client.send(WSFrame.Text("Hello, world!"))
+//        _ <- client.send(WSFrame.Text("Hello, world!"))\
+        _ <- client.send(WSFrame.Text("time"))
         _ <- client.receiveStream.collectFirst {
           case WSFrame.Text(s, _) => s
         }.compile.string >>= printLine
