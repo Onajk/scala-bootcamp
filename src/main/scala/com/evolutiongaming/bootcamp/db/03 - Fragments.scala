@@ -81,10 +81,14 @@ object FragmentsUsage extends IOApp {
 
   def fetchBooksByAuthors(ids: NonEmptyList[UUID]): doobie.Query0[BookWithAuthor] = {
     val queryBooks = fetchBooksAndAuthor ++ Fragments.whereAnd(Fragments.in(fr"author", ids))
+    // select <books and authors> from books, authors where <author.id in (<id1>, <id2>)>
     queryBooks.query[BookWithAuthor]
   }
 
-  def fetchBooksByYear(year: Int): doobie.ConnectionIO[List[Book]] = ???
+  def fetchBooksByYear(year: Int): doobie.ConnectionIO[List[Book]] = {
+    val q = books ++ Fragments.whereAnd(fr"year_published = $year")
+    q.query[Book].to[List]
+  }
 
   def fetchBooksByYearRange(yearFrom: Int, yearTo: Int): doobie.ConnectionIO[List[Book]] = ???
 
